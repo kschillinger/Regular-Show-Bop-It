@@ -1,43 +1,53 @@
-#include <Arduino.h>
+
 
 /*
 Main File for bop it game.
 Last Updated: 3/7/2026
-Todos everything
+Todo
+
+     
+
+
+Open questions 
+Debouncing? hardware debounce 
+
 
 */
-
+#include <Arduino.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdbool.h>
- 
+#include <avr/sleep.h>
+#include <avr/power.h>
+#include<avr/interrupt.h>
+
+extern "C"
+{
+     #include "init.h"
+}
+//Globals
 #define REQUIRED_COUNT 10 // User must mash buttons 10 times for success
 #define REQUIRED_ACC 15 //  Arbitrary placeholder User must shake with certain acceration for success
-
-enum state : uint8_t{mash, shake, hide,joke,win,lose};
+enum state : uint8_t{mash, shake, hide,joke,prestart,win,lose};
 uint8_t currentState;
- uint16_t button1Count=0,button2Count=0; 
-
+uint16_t lbuttonCount=0,rbuttonCount=0; 
 uint8_t score = 0x00;      // Initialize score to 0
 uint8_t successful = 0x01; // Initialize to successful user input dont know if this is needed
-void uartInit(uint32_t baud)
+uint8_t delayms=5000; //start at 5s
+//ISRs
+void leftButtonISR()
 {
-
+     lbuttonCount++;
 }
-/*
-     Choose prompt and generate sound 
-     @param void
-     @return void
-*/
-void chooseAndPromptAction() 
+void rightButtonISR()
 {
-     //Select sound based on the random int and output
- 	 currentState = rand() % (4);// random int  =  min + rand mod (max-min+1) Update current action 
-     uint8_t prompt = (uint8_t)0x01;
-     generateSound();    // Prompt user based on current action
-     prompt = (uint8_t)0; //reset prompt
+     rbuttonCount++;
+}
+void startButtonISR()
+{
+     sleep_disable(); //restart execution
 }
 
 /*
@@ -56,7 +66,9 @@ void readInputUpdate()
 
 }
 void speakerOutput(const char *phrase);
-const char *get_joke(int index);
+   
+
+
 
 // Display
 void display_winning_screen(void);
@@ -67,53 +79,126 @@ void display_losing_screen(void);
 //accelerometer info is i2c or spi
 bool readAccelerometer(void);
 bool  readPhotoRes(void);
-
+void screenUpdate();
 
 
 int main(void)
 {
+     
      while(1)
      {
-         switch(currentState)
-     {
-          //since interrupts are needed to read the button clicks no Buttone read function is needed
-          case(mash): 
-             
-               //buttons read w/ interrups
-               //check success
-               if(button1Count+button2Count >= REQUIRED_COUNT) 
-               {
-                    score ++;
-                    currentState = rand() % (4); //randomly select next action 0-3 
-               }
-               else
-               {
-                    successful = 0; //delete?
-                    currentState = rand() % (4); //transition to lose state
-               }
-               //check score
-               //state transition
+     
+          switch(currentState)
+          {
+               case(prestart):
                
-               break;
-          case(shake):
-               //read accelerometer
- 
-          
-               break;
-          case(hide):
+                    //put cpu into low power mode
+                    //only interrupts and timer2 active
+                    set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+                    sleep_enable();
+                    sleep_cpu(); 
+                    //start button triggers interrupt and takes out of sleep state
+                    currentState = rand() % (4); //start the game
+               
+               
+               //since interrupts are needed to read the button clicks no Buttone read function is needed
+               case(mash): 
+                    generateSound();
+                    //buttons read w/ interrupts
+                    delay(delayms);
+                    //check success
+                    if(lbuttonCount + rbuttonCount >= REQUIRED_COUNT) 
+                    {
+                         score ++;
+                         screenUpdate();
+                         currentState = rand() % (4); //randomly select next action 0-3 
+                         if(score >= 99) // winning score overwrite
+                         {
+                              currentState = win;
+                         }
+                    }
+                    else
+                    {
+                         successful = 0; //delete?
+                         currentState = lose; //transition to lose state
+                    }
+                    //reset click counts
+                    lbuttonCount=0;
+                    rbuttonCount=0;
+                    break;
+                    
+               case(shake):
 
-               break;
+                    generateSound();
+                    delay(delayms);
+                    //read accelerometer
+                    if(true) //should be if acceleration is above threshold
+                    {
+                         score++;
+                         screenUpdate();
+                         currentState = rand() % (4); //randomly select next action 0-3 
+                         if(score >= 99) // winning score overwrite
+                         {
+                              currentState = win;
+                         }
+                    }
+                    else
+                    {
+                         successful = 0; //delete?
+                         currentState = lose; //transition to lose state
+                    }
+                    
+               
+                    break;
+               case(hide):
 
-          case(win):
-               break;
+                    generateSound();
+                    delay(delayms);
+                    if(true) //should be volatage thresh check 
+                    {
+                         score++;
+                         screenUpdate();
+                         currentState = rand() % (4); //randomly select next action 0-3 
+                         if(score >= 99) // winning score overwrite
+                         {
+                              currentState = win;
+                         }
+                    }
+                    else
+                    {
+                         successful = 0; //delete?
+                         currentState = lose; //transition to lose state
+                    }
 
-          case(lose):
+                    break;
 
-               break;
-          case(joke):
+              
+               case(joke):
+                    rand() % 3;//assuming we have 2 jokes
+                    //output joke 
+                    delay(delayms);
+               
+                    
+                    break;
+
+               case(win):
+                    generateSound();
+                    while(1)//continuously show victory until restart or shut off
+                    {
+                         display_winning_screen();
+                    }
+                    break;
+               case(lose):
+                    while(1)
+                    {
+                         display_losing_screen();
+                    }
+
+                    break;
+               
 
 
-     } 
+          } 
      }
 }
  
