@@ -35,7 +35,11 @@ when the user restarts mid game the state case will finish executing before rest
 #include <stdbool.h>
 #include <avr/sleep.h>
 #include <avr/power.h>
-#include<avr/interrupt.h>
+#include <avr/interrupt.h>
+
+//Screen driver header
+#include <SPI.h>
+#include <U8g2lib.h>
 
 extern "C"
 {
@@ -100,9 +104,53 @@ void speakerOutput(const char *phrase);
 
 
 // Display
-void display_winning_screen(void);
-void display_losing_screen(void);
-void screenUpdate();
+
+//NDH-C12832A1Z-FSW-FBW-3v3 (ST7565R, 4-Wire SPI)
+#define LCD_CS_PIN 10
+#define LCD_A0_PIN 9
+#define LCD_RST_PIN 8
+
+U8G2_ST7565_NHD_C12832_1_4W_HW_SPI display(U8G2_R0, LCD_CS_PIN, LCD_A0_PIN, LCD_RST_PIN);
+
+bool initDisplay()
+{
+     display.begin();
+     display.clearBuffer();
+     display.setFont(u8g2_font_6x10_tf); // Set a font for the display
+     display.drawStr(0,10, "BOP IT!"); // Display the title
+     display.sendBuffer();
+     return true;
+}
+void screenUpdate(uint8_t score)
+{
+     char scoreLine[16];
+     snprintf(scoreLine, sizeof(scoreLine), "Score: %02d", score);
+     
+     display.clearBuffer();
+     display.setFont(u8g2_font_6x10_tf); // Set a font for the display
+     display.drawStr(0,20, scoreLine);
+     display.sendBuffer();
+
+}
+void display_winning_screen(uint8_t score)
+{
+     char finalLine[16];
+     snprintf(finalLine, sizeof(finalLine), "You Win! Score: %02d", score);
+     display.clearBuffer();
+     display.setFont(u8g2_font_6x10_tf);
+     display.drawStr(0,20, finalLine);
+     display.sendBuffer();
+}
+void display_losing_screen(uint8_t score)
+{
+     char finalLine[16];
+     snprintf(finalLine, sizeof(finalLine), "You Lose! Score: %02d", score);
+     display.clearBuffer();
+     display.setFont(u8g2_font_6x10_tf);
+     display.drawStr(0,20, finalLine);
+     display.sendBuffer();
+}
+
 // Hardware reads
 
 //accelerometer info is i2c or spi
@@ -152,7 +200,7 @@ int main(void)
                     if(lbuttonCount + rbuttonCount >= REQUIRED_COUNT) 
                     {
                          score ++;
-                         screenUpdate();
+                         screenUpdate(score);
                         
                          if(score >= 99) // winning score 
                          {
@@ -183,7 +231,7 @@ int main(void)
                     if(true) //should be if acceleration is above threshold
                     {
                          score++;
-                         screenUpdate();
+                         screenUpdate(score);
                          if(score >= 99) // winning score 
                          {
                               currentState = win;
@@ -211,7 +259,7 @@ int main(void)
                     if(true) //should be volatage thresh check 
                     {
                          score++;
-                         screenUpdate();
+                         screenUpdate(score);
 
                          if(score >= 99) // winning score 
                          {
@@ -261,7 +309,7 @@ int main(void)
                     generateSound();
                     while(1)//continuously show victory until restart or shut off
                     {
-                         display_winning_screen();
+                         display_winning_screen(score);
                     }
                     break;
                case(lose):
@@ -269,7 +317,7 @@ int main(void)
                     generateSound();                
                     while(1)
                     {
-                         display_losing_screen();
+                         display_losing_screen(score);
                     }
 
                     break;
