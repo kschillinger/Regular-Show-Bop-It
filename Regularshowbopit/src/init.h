@@ -3,7 +3,9 @@
 
 void gpioInit();
 void interruptInit();
-void timerInit();
+void timerInit(); //i cant remember why i included
+
+
 
 
 #endif

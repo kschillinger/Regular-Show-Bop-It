@@ -6,15 +6,15 @@ Last Updated: 3/7/2026
 Todo
 Sound selection logic
 Sound output
-Screen stuff
-accelerometer read
+Screen stuff - done? 
+accelerometer read - done
 photosensor read
 
-     
 
 
-Open questions 
-Debouncing? hardware debounce 
+
+Open questions
+Debouncing? hardware debounce
 screen refresh?
 need a good way to show user where the light sensor is
     blink led?
@@ -22,7 +22,7 @@ need a good way to show user where the light sensor is
 df player memory addressing
 when the user restarts mid game the state case will finish executing before restarting, need a way to preemmpt and force execution to restart
     -is it possible to send a reset signal through hardware?
-    problem with that is that a second click would be needed to take the proc out of sleep mode 
+    problem with that is that a second click would be needed to take the proc out of sleep mode
     don't think this is the way to go
     does the user even need to be able to restart mid game?
 */
@@ -36,28 +36,45 @@ when the user restarts mid game the state case will finish executing before rest
 #include <avr/sleep.h>
 #include <avr/power.h>
 #include <avr/interrupt.h>
+#include <Adafruit_LIS3DH.h>
+#include <Adafruit_Sensor.h>
+#include <SoftwareSerial.h>
+//#include <DFRobotDFPlayerMini.h>
 
-//Screen driver header
+
+// Screen driver header
 #include <SPI.h>
 #include <U8g2lib.h>
 
 extern "C"
 {
-     #include "init.h"
+#include "init.h"
 }
-//Globals
+// Globals
 #define REQUIRED_COUNT 10 // User must mash buttons 10 times for success
-#define REQUIRED_ACC 15 //  Arbitrary placeholder User must shake with certain acceration for success
-#define GLOBAL_DEL 5000 //start at 5s
-enum state : uint8_t{mash, shake, hide,joke,prestart,win,lose};
-uint8_t currentState=prestart; //start in sleep mode
-uint16_t lbuttonCount=0,rbuttonCount=0; 
-uint8_t score = 0x00;      // Initialize score to 0
-uint8_t successful = 0x01; // Initialize to successful user input dont know if this is needed
-uint8_t delayms=GLOBAL_DEL; //initilaize delay value to max delay 
-uint8_t increment = floor(GLOBAL_DEL/100); //get delay increment 5s del div=50ms
+#define REQUIRED_ACC 15   //  Arbitrary placeholder User must shake with certain acceration for success
+#define GLOBAL_DEL 5000   // start at 5s
+#define SHAKE_THRESH 16384 // currently at +- 4G 1G is 8192 setting threshold at 2G
 
-//ISRs
+enum state : uint8_t
+{
+     mash,
+     shake,
+     hide,
+     joke,
+     prestart,
+     win,
+     lose
+};
+uint8_t currentState = prestart; // start in sleep mode
+uint16_t lbuttonCount = 0, rbuttonCount = 0;
+uint8_t score = 0x00;                        // Initialize score to 0
+uint8_t successful = 0x01;                   // Initialize to successful user input dont know if this is needed
+uint8_t delayms = GLOBAL_DEL;                // initilaize delay value to max delay
+uint8_t increment = floor(GLOBAL_DEL / 100); // get delay increment 5s del div=50ms
+Adafruit_LIS3DH lis = Adafruit_LIS3DH();
+
+// ISRs
 void leftButtonISR()
 {
      lbuttonCount++;
@@ -68,44 +85,36 @@ void rightButtonISR()
 }
 void startButtonISR()
 {
-     
-     if(score>0) //user restarting mid game or at end of game 
+
+     if (score > 0) // user restarting mid game or at end of game
      {
-       //reset all game vars
-       score=0;
-       lbuttonCount=0;
-       rbuttonCount=0;
-       delayms=GLOBAL_DEL;
-       currentState = rand() % (4); 
-       //preempt and restart exection somehow
+          // reset all game vars
+          score = 0;
+          lbuttonCount = 0;
+          rbuttonCount = 0;
+          delayms = GLOBAL_DEL;
+          currentState = rand() % (4);
+          // preempt and restart exection somehow
      }
      else
      {
-          sleep_disable(); //restart execution
-    
+          sleep_disable(); // restart execution
      }
 }
 
 /*
-     Output sound from memory based on the current state 
+     Output sound from memory based on the current state
      @param void
      @return void
 */
-void generateSound() //may be removed, df player needs uart function can just be called in main 
+void generateSound() // may be removed, df player needs uart function can just be called in main
 {
-
-
-     
-
 }
 void speakerOutput(const char *phrase);
-   
-
-
 
 // Display
 
-//NDH-C12832A1Z-FSW-FBW-3v3 (ST7565R, 4-Wire SPI)
+// NDH-C12832A1Z-FSW-FBW-3v3 (ST7565R, 4-Wire SPI)
 #define LCD_CS_PIN 10
 #define LCD_A0_PIN 9
 #define LCD_RST_PIN 8
@@ -117,7 +126,7 @@ bool initDisplay()
      display.begin();
      display.clearBuffer();
      display.setFont(u8g2_font_6x10_tf); // Set a font for the display
-     display.drawStr(0,10, "BOP IT!"); // Display the title
+     display.drawStr(0, 10, "BOP IT!");  // Display the title
      display.sendBuffer();
      return true;
 }
@@ -125,12 +134,11 @@ void screenUpdate(uint8_t score)
 {
      char scoreLine[16];
      snprintf(scoreLine, sizeof(scoreLine), "Score: %02d", score);
-     
+
      display.clearBuffer();
      display.setFont(u8g2_font_6x10_tf); // Set a font for the display
-     display.drawStr(0,20, scoreLine);
+     display.drawStr(0, 20, scoreLine);
      display.sendBuffer();
-
 }
 void display_winning_screen(uint8_t score)
 {
@@ -138,7 +146,7 @@ void display_winning_screen(uint8_t score)
      snprintf(finalLine, sizeof(finalLine), "You Win! Score: %02d", score);
      display.clearBuffer();
      display.setFont(u8g2_font_6x10_tf);
-     display.drawStr(0,20, finalLine);
+     display.drawStr(0, 20, finalLine);
      display.sendBuffer();
 }
 void display_losing_screen(uint8_t score)
@@ -147,184 +155,176 @@ void display_losing_screen(uint8_t score)
      snprintf(finalLine, sizeof(finalLine), "You Lose! Score: %02d", score);
      display.clearBuffer();
      display.setFont(u8g2_font_6x10_tf);
-     display.drawStr(0,20, finalLine);
+     display.drawStr(0, 20, finalLine);
      display.sendBuffer();
 }
 
 // Hardware reads
 
-//accelerometer info is i2c or spi
-bool readAccelerometer(void);
-bool  readPhotoRes(void);
 
-//helpers
+bool readPhotoRes(void);
+
+// helpers
 void updateDelay()
 {
-     if(delayms-increment<=0) //should never happen
+     if (delayms - increment <= 0) // should never happen
      {
-          delayms=200;
+          delayms = 200;
      }
      else
      {
-          delayms-=increment;
+          delayms -= increment;
      }
-
 }
-
 
 int main(void)
 {
-     
-     while(1)
+     // initialize accelerometer
+     lis.begin(0x18);                // default I2C address
+     lis.setRange(LIS3DH_RANGE_2_G); // set to +- 2g acceleration range
+     lis.setDataRate(LIS3DH_DATARATE_50_HZ);
+
+     while (1)
      {
-     
-          switch(currentState)
+
+          switch (currentState)
           {
-               case(prestart):
-               
-                    //put cpu into low power mode
-                    //only interrupts and timer2 active
-                    set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-                    sleep_enable();
-                    sleep_cpu(); 
-                    //start button triggers interrupt and takes out of sleep state
-                    currentState = rand() % (4); //start the game
-               
-               
-               //since interrupts are needed to read the button clicks no Buttone read function is needed
-               case(mash): 
-                    generateSound();
-                    //buttons read w/ interrupts
-                    delay(delayms);
-                    //check success
-                    if(lbuttonCount + rbuttonCount >= REQUIRED_COUNT) 
+          case (prestart):
+
+               // put cpu into low power mode
+               // only interrupts and timer2 active
+               set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+               sleep_enable();
+               sleep_cpu();
+               // start button triggers interrupt and takes out of sleep state
+               currentState = rand() % (4); // start the game
+
+          // since interrupts are needed to read the button clicks no Buttone read function is needed
+          case (mash):
+               generateSound();
+               // buttons read w/ interrupts
+               delay(delayms);
+               // check success
+               if (lbuttonCount + rbuttonCount >= REQUIRED_COUNT)
+               {
+                    score++;
+                    screenUpdate(score);
+
+                    if (score >= 99) // winning score
                     {
-                         score ++;
-                         screenUpdate(score);
-                        
-                         if(score >= 99) // winning score 
-                         {
-                              currentState = win;
-                         }
-                         else
-                         {
-                             currentState = rand() % (4); //randomly select next action 0-3 
-                             updateDelay();
-                         }
-                        
+                         currentState = win;
                     }
                     else
                     {
-                         successful = 0; //delete?
-                         currentState = lose; //transition to lose state
+                         currentState = rand() % (4); // randomly select next action 0-3
+                         updateDelay();
                     }
-                    //reset click counts
-                    lbuttonCount=0;
-                    rbuttonCount=0;
-                    break;
-                    
-               case(shake):
+               }
+               else
+               {
+                    successful = 0;      // delete?
+                    currentState = lose; // transition to lose state
+               }
+               // reset click counts
+               lbuttonCount = 0;
+               rbuttonCount = 0;
+               break;
 
-                    generateSound();
-                    delay(delayms);
-                    //read accelerometer
-                    if(true) //should be if acceleration is above threshold
+          case (shake):
+
+               generateSound();
+               delay(delayms);
+               // read accelerometer
+               lis.read(); // populates the xyz vals
+               //magnitude of at least one of the axes must be above threshold
+               if (abs(lis.z) >= SHAKE_THRESH || abs(lis.y) >= SHAKE_THRESH || abs(lis.x) >= SHAKE_THRESH)
+               {
+                    score++;
+                    screenUpdate(score);
+                    if (score >= 99) // winning score
                     {
-                         score++;
-                         screenUpdate(score);
-                         if(score >= 99) // winning score 
-                         {
-                              currentState = win;
-                         }
-                         else
-                         {
-                             currentState = rand() % (4); //randomly select next action 0-3 
-                             updateDelay();
-                         }
-                         
+                         currentState = win;
                     }
                     else
                     {
-                         successful = 0; //delete?
-                         currentState = lose; //transition to lose state
+                         currentState = rand() % (4); // randomly select next action 0-3
+                         updateDelay();
                     }
-                    
-               
-                    break;
-               case(hide):
+               }
+               else
+               {
+                    successful = 0;      // delete?
+                    currentState = lose; // transition to lose state
+               }
 
-                    generateSound();
-                    delay(delayms);
+               break;
+          case (hide):
 
-                    if(true) //should be volatage thresh check 
+               generateSound();
+               delay(delayms);
+
+               if (true) // should be volatage thresh check
+               {
+                    score++;
+                    screenUpdate(score);
+
+                    if (score >= 99) // winning score
                     {
-                         score++;
-                         screenUpdate(score);
-
-                         if(score >= 99) // winning score 
-                         {
-                              currentState = win;
-                         }
-                         else
-                         {
-                             currentState = rand() % (4); //randomly select next action 0-3 
-                             updateDelay();
-                         }
+                         currentState = win;
                     }
                     else
                     {
-                         successful = 0; //delete?
-                         currentState = lose; //transition to lose state
+                         currentState = rand() % (4); // randomly select next action 0-3
+                         updateDelay();
                     }
+               }
+               else
+               {
+                    successful = 0;      // delete?
+                    currentState = lose; // transition to lose state
+               }
 
-                    break;
+               break;
 
-              
-               case(joke):
+          case (joke):
 
-                   
-                    generateSound();
-                    delay(delayms);
-                    if(true) //no input im thinking they get no points for ignoring and the delay doesn't change
+               generateSound();
+               delay(delayms);
+               if (true) // no input im thinking they get no points for ignoring and the delay doesn't change
+               {
+                    currentState = rand() % (4); // transition
+               }
+               else // cooked
+               {
+                    if (lbuttonCount + rbuttonCount != 0)
                     {
-                         currentState = rand() % (4); //transition
+                         successful = 0;      // delete?
+                         currentState = lose; // transition to lose state
+                         break;
                     }
-                    else //cooked
-                    {
-                         if(lbuttonCount + rbuttonCount !=0)
-                         {
-                              successful = 0; //delete?
-                              currentState = lose; //transition to lose state
-                              break;
-                         }
-                         //if accelerometer
+                    // if accelerometer
 
-                         //if light sense 
-                         
-                    }
-                    
-                    break;
+                    // if light sense
+               }
 
-               case(win):
-                    generateSound();
-                    while(1)//continuously show victory until restart or shut off
-                    {
-                         display_winning_screen(score);
-                    }
-                    break;
-               case(lose):
-               
-                    generateSound();                
-                    while(1)
-                    {
-                         display_losing_screen(score);
-                    }
+               break;
 
-                    break;
-               
+          case (win):
+               generateSound();
+               while (1) // continuously show victory until restart or shut off
+               {
+                    display_winning_screen(score);
+               }
+               break;
+          case (lose):
 
+               generateSound();
+               while (1)
+               {
+                    display_losing_screen(score);
+               }
 
-          } 
+               break;
+          }
      }
 }
- 
