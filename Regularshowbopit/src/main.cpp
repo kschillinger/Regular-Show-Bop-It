@@ -102,16 +102,6 @@ void startButtonISR()
      }
 }
 
-/*
-     Output sound from memory based on the current state
-     @param void
-     @return void
-*/
-void generateSound() // may be removed, df player needs uart function can just be called in main
-{
-}
-void speakerOutput(const char *phrase);
-
 // Display
 
 // NDH-C12832A1Z-FSW-FBW-3v3 (ST7565R, 4-Wire SPI)
@@ -184,6 +174,12 @@ int main(void)
      lis.setRange(LIS3DH_RANGE_2_G); // set to +- 2g acceleration range
      lis.setDataRate(LIS3DH_DATARATE_50_HZ);
 
+     //initialize the display
+     initDisplay();
+
+     //initialize the mp3 player
+     speakerInit();
+
      while (1)
      {
 
@@ -201,7 +197,7 @@ int main(void)
 
           // since interrupts are needed to read the button clicks no Buttone read function is needed
           case (mash):
-               generateSound();
+               generateSound(mash);
                // buttons read w/ interrupts
                delay(delayms);
                // check success
@@ -232,7 +228,7 @@ int main(void)
 
           case (shake):
 
-               generateSound();
+               generateSound(shake);
                delay(delayms);
                // read accelerometer
                lis.read(); // populates the xyz vals
@@ -260,7 +256,7 @@ int main(void)
                break;
           case (hide):
 
-               generateSound();
+               generateSound(hide);
                delay(delayms);
 
                if (true) // should be volatage thresh check
@@ -288,7 +284,7 @@ int main(void)
 
           case (joke):
 
-               generateSound();
+               generateSound(joke);
                delay(delayms);
                if (true) // no input im thinking they get no points for ignoring and the delay doesn't change
                {
@@ -310,7 +306,7 @@ int main(void)
                break;
 
           case (win):
-               generateSound();
+               generateSound(win);
                while (1) // continuously show victory until restart or shut off
                {
                     display_winning_screen(score);
@@ -318,7 +314,7 @@ int main(void)
                break;
           case (lose):
 
-               generateSound();
+               generateSound(lose);
                while (1)
                {
                     display_losing_screen(score);

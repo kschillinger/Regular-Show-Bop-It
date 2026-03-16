@@ -45,7 +45,7 @@ enum soundID_Actions : uint8_t
     ID_HIDE  = 003,
     ID_JOKE = 004,
     ID_EGGCELLENT = 005,
-    ID_LOSE = 006
+    ID_YOURFIRED = 006
 };
 
 enum soundID_Jokes : uint8_t
@@ -80,10 +80,32 @@ int random_joke()
     return (rand() % numberJokes) + 1; //returns a random joke ID between 1 and numberJokes
 }
 
+soundID_Jokes randomJokeID()
+{
+    switch (random_joke())
+    {
+        case 1:
+            return ID_JOKE1;
+            break;
+        case 2:
+            return ID_JOKE2;
+            break;
+        case 3:
+            return ID_JOKE3;
+            break;
+        case 4:
+            return ID_JOKE4;
+            break;
+        case 5:
+            return ID_JOKE5;
+            break;
+    }
+}
+
 //function that handles the sound that is to be played depending on the state
 void generateSound(uint8_t state)
 {
-    uint8_t jokeID = random_joke();
+    uint8_t jokeID = randomJokeID(); //get a random joke ID to be used if the state is joke
     switch (state)
     {
         case (mash) :
@@ -96,14 +118,12 @@ void generateSound(uint8_t state)
             mp3.play(ID_HIDE);
             break;
         case (joke) :
-            mp3.play(soundID_Jokes(jokeID)); //playing random joke
+            mp3.play(jokeID);
             break;
         case (win) :
             mp3.play(ID_EGGCELLENT);
             break;
         case (lose) :
-            mp3.play(ID_LOSE);
+            mp3.play(ID_YOURFIRED);
     }
 }
-
-
