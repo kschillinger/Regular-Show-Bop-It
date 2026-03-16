@@ -39,7 +39,7 @@ when the user restarts mid game the state case will finish executing before rest
 #include <Adafruit_LIS3DH.h>
 #include <Adafruit_Sensor.h>
 #include <SoftwareSerial.h>
-//#include <DFRobotDFPlayerMini.h>
+#include <DFRobotDFPlayerMini.h>
 
 
 // Screen driver header
