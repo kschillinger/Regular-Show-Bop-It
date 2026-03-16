@@ -45,7 +45,8 @@ enum soundID_Actions : uint8_t
     ID_HIDE  = 003,
     ID_JOKE = 004,
     ID_EGGCELLENT = 005,
-    ID_YOURFIRED = 006
+    ID_YOURFIRED = 006,
+    ID_COUNTDOWN = 007
 };
 
 enum soundID_Jokes : uint8_t
@@ -102,6 +103,20 @@ soundID_Jokes randomJokeID()
     }
 }
 
+void playAndWait(uint8_t state)
+{
+    mp3.play(state);
+            
+    //creating a condition that waits for the audio to finish before execution is continued
+    while(true)
+    {
+            if(mp3.available() && mp3.readType() == DFPlayerPlayFinished)
+            {
+                break;
+            }
+    }
+}
+
 //function that handles the sound that is to be played depending on the state
 void generateSound(uint8_t state)
 {
@@ -109,21 +124,25 @@ void generateSound(uint8_t state)
     switch (state)
     {
         case (mash) :
-            mp3.play(ID_MASH);
+            playAndWait(ID_MASH);
             break;
         case (shake) :
-            mp3.play(ID_SHAKE);
+            playAndWait(ID_SHAKE);
             break;
         case (hide) :
-            mp3.play(ID_HIDE);
+            playAndWait(ID_HIDE);
             break;
         case (joke) :
-            mp3.play(jokeID);
+            playAndWait(jokeID);
             break;
         case (win) :
-            mp3.play(ID_EGGCELLENT);
+            playAndWait(ID_EGGCELLENT);
             break;
         case (lose) :
-            mp3.play(ID_YOURFIRED);
+            playAndWait(ID_YOURFIRED);
+            break;
+        case (prestart) :
+            playAndWait(ID_COUNTDOWN);
+            break;
     }
 }

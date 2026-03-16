@@ -86,6 +86,7 @@ void rightButtonISR()
 void startButtonISR()
 {
 
+
      if (score > 0) // user restarting mid game or at end of game
      {
           // reset all game vars
@@ -99,6 +100,9 @@ void startButtonISR()
      else
      {
           sleep_disable(); // restart execution
+          
+          //for now we comment it out until further testing is done
+          //generateSound(prestart);  // start the game with a countdown sound
      }
 }
 
