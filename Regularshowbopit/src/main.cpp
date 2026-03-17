@@ -89,13 +89,11 @@ void startButtonISR()
 
      if (score > 0) // user restarting mid game or at end of game
      {
-          // reset all game vars
-          score = 0;
-          lbuttonCount = 0;
-          rbuttonCount = 0;
-          delayms = GLOBAL_DEL;
-          currentState = rand() % (4);
-          // preempt and restart exection somehow
+        
+          //send high to reset pin to restart execution
+
+          
+
      }
      else
      {
