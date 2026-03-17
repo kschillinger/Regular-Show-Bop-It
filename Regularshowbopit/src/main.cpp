@@ -40,6 +40,7 @@ when the user restarts mid game the state case will finish executing before rest
 #include <Adafruit_Sensor.h>
 #include <SoftwareSerial.h>
 #include <speakerConfig.hpp>
+#include <displayConfig.hpp>
 
 
 // Screen driver header
@@ -73,6 +74,7 @@ uint8_t successful = 0x01;                   // Initialize to successful user in
 uint8_t delayms = GLOBAL_DEL;                // initilaize delay value to max delay
 uint8_t increment = floor(GLOBAL_DEL / 100); // get delay increment 5s del div=50ms
 Adafruit_LIS3DH lis = Adafruit_LIS3DH();
+LiquidCrystal_PCF8574 lcd(0x27);
 
 // ISRs
 void leftButtonISR()
@@ -106,50 +108,7 @@ void startButtonISR()
 
 // Display
 
-// NDH-C12832A1Z-FSW-FBW-3v3 (ST7565R, 4-Wire SPI)
-#define LCD_CS_PIN 10
-#define LCD_A0_PIN 9
-#define LCD_RST_PIN 8
 
-U8G2_ST7565_NHD_C12832_1_4W_HW_SPI display(U8G2_R0, LCD_CS_PIN, LCD_A0_PIN, LCD_RST_PIN);
-
-bool initDisplay()
-{
-     display.begin();
-     display.clearBuffer();
-     display.setFont(u8g2_font_6x10_tf); // Set a font for the display
-     display.drawStr(0, 10, "BOP IT!");  // Display the title
-     display.sendBuffer();
-     return true;
-}
-void screenUpdate(uint8_t score)
-{
-     char scoreLine[16];
-     snprintf(scoreLine, sizeof(scoreLine), "Score: %02d", score);
-
-     display.clearBuffer();
-     display.setFont(u8g2_font_6x10_tf); // Set a font for the display
-     display.drawStr(0, 20, scoreLine);
-     display.sendBuffer();
-}
-void display_winning_screen(uint8_t score)
-{
-     char finalLine[16];
-     snprintf(finalLine, sizeof(finalLine), "You Win! Score: %02d", score);
-     display.clearBuffer();
-     display.setFont(u8g2_font_6x10_tf);
-     display.drawStr(0, 20, finalLine);
-     display.sendBuffer();
-}
-void display_losing_screen(uint8_t score)
-{
-     char finalLine[16];
-     snprintf(finalLine, sizeof(finalLine), "You Lose! Score: %02d", score);
-     display.clearBuffer();
-     display.setFont(u8g2_font_6x10_tf);
-     display.drawStr(0, 20, finalLine);
-     display.sendBuffer();
-}
 
 // Hardware reads
 
@@ -171,16 +130,16 @@ void updateDelay()
 
 int main(void)
 {
+     init();
+
      // initialize accelerometer
      lis.begin(0x18);                // default I2C address
      lis.setRange(LIS3DH_RANGE_2_G); // set to +- 2g acceleration range
      lis.setDataRate(LIS3DH_DATARATE_50_HZ);
 
-     //initialize the display
-     initDisplay();
-
      //initialize the mp3 player
      speakerInit();
+     displayInit();
 
      while (1)
      {
@@ -188,6 +147,7 @@ int main(void)
           switch (currentState)
           {
           case (prestart):
+               displayStartingMessage();
 
                // put cpu into low power mode
                // only interrupts and timer2 active
@@ -195,6 +155,7 @@ int main(void)
                sleep_enable();
                sleep_cpu();
                // start button triggers interrupt and takes out of sleep state
+               displayScore(score);
                currentState = rand() % (4); // start the game
 
           // since interrupts are needed to read the button clicks no Buttone read function is needed
@@ -206,7 +167,7 @@ int main(void)
                if (lbuttonCount + rbuttonCount >= REQUIRED_COUNT)
                {
                     score++;
-                    screenUpdate(score);
+                    displayScore(score);
 
                     if (score >= 99) // winning score
                     {
@@ -238,7 +199,7 @@ int main(void)
                if (abs(lis.z) >= SHAKE_THRESH || abs(lis.y) >= SHAKE_THRESH || abs(lis.x) >= SHAKE_THRESH)
                {
                     score++;
-                    screenUpdate(score);
+                    displayScore(score);
                     if (score >= 99) // winning score
                     {
                          currentState = win;
@@ -264,7 +225,7 @@ int main(void)
                if (true) // should be volatage thresh check
                {
                     score++;
-                    screenUpdate(score);
+                    displayScore(score);
 
                     if (score >= 99) // winning score
                     {
@@ -308,18 +269,18 @@ int main(void)
                break;
 
           case (win):
+               displayMessage("You Win!", score);
                generateSound(win);
                while (1) // continuously show victory until restart or shut off
                {
-                    display_winning_screen(score);
                }
                break;
           case (lose):
 
+               displayMessage("You Lose!", score);
                generateSound(lose);
                while (1)
                {
-                    display_losing_screen(score);
                }
 
                break;

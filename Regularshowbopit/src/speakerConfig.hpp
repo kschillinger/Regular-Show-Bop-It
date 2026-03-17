@@ -3,6 +3,8 @@
 
 #define numberJokes 5
 #define numberStates 6
+#define folderActions 1
+#define folderJokes 2
 
 //creating enums fore the speaker outputs, note that file structure 
 //is as follows: 
@@ -103,11 +105,11 @@ soundID_Jokes randomJokeID()
     }
 }
 
-void playAndWait(uint8_t state)
+void playAndWait(uint8_t folderID, uint8_t state)
 {
-    mp3.play(state);
+    //function that handles the playing of the audio and waiting for it to finish before execution is continued, takes in the folder ID and state ID to determine which audio to play
+    mp3.playFolder(folderID, state);
             
-    //creating a condition that waits for the audio to finish before execution is continued
     while(true)
     {
             if(mp3.available() && mp3.readType() == DFPlayerPlayFinished)
@@ -124,25 +126,25 @@ void generateSound(uint8_t state)
     switch (state)
     {
         case (mash) :
-            playAndWait(ID_MASH);
+            playAndWait(folderActions, ID_MASH);
             break;
         case (shake) :
-            playAndWait(ID_SHAKE);
+            playAndWait(folderActions, ID_SHAKE);
             break;
         case (hide) :
-            playAndWait(ID_HIDE);
+            playAndWait(folderActions, ID_HIDE);
             break;
         case (joke) :
-            playAndWait(jokeID);
+            playAndWait(folderJokes, jokeID);
             break;
         case (win) :
-            playAndWait(ID_EGGCELLENT);
+            playAndWait(folderActions, ID_EGGCELLENT);
             break;
         case (lose) :
-            playAndWait(ID_YOURFIRED);
+            playAndWait(folderActions, ID_YOURFIRED);
             break;
         case (prestart) :
-            playAndWait(ID_COUNTDOWN);
+            playAndWait(folderActions, ID_COUNTDOWN);
             break;
     }
 }
