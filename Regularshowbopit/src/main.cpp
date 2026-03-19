@@ -18,12 +18,7 @@ Do we need to disable interrupts when reading the buttons? currentlythey are dis
 
 Debouncing 
      -hardware debounce
-
-need a good way to show user where the light sensor is
-    -led indicator that shuts off when the cover is successful
    
-df player memory addressing
-     -landis got this squared away right? 
 when the user restarts mid game the state case will finish executing before restarting, need a way to preemmpt and force execution to restart
     -solution is to send high to reset pin which resets cpu 
 */
@@ -59,12 +54,18 @@ extern "C"
 #define SHAKE_THRESH 16384 // currently at +- 4G 1G is 8192 setting threshold at 2G
 
 // Pin definitions
-#define photoPin 2
-#define leftButtonPin 3
-#define rightButtonPin 4
-#define startButtonPin 5
+#define photoPin 14
+#define leftButtonPin 4
+#define rightButtonPin 5
+#define startButtonPin 6
 #define indicatorLEDPin 11
-
+#define resetSignalPin 12 //**Note: This pin is used to signal a reset condition, not mapped to physical reset pin */
+#define displaySCLPin 28 
+#define displaySDAPin 27
+#define acclerometerPin 13
+#define lpfdPin 1
+#define speakerRXPin 2
+#define speakerTXPin 3
 
 enum state : uint8_t
 {
@@ -87,7 +88,6 @@ LiquidCrystal_PCF8574 lcd(0x27);
 // ISRs
 void leftButtonISR()
 {    
-     cli(); //disable interrupts to prevent
      lbuttonCount++;
      sei(); //re-enable interrupts
      
@@ -160,7 +160,6 @@ int main(void)
 {
      interruptInit();
      gpioInit();
-    
  
      // initialize accelerometer
      lis.begin(0x18);                // default I2C address
@@ -169,7 +168,10 @@ int main(void)
 
      //initialize the mp3 player
      speakerInit();
+
+     //initialize the display
      displayInit();
+
      //enable interrupts 
     sei(); //master interrupt enable 
      while (1)
