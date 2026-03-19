@@ -90,14 +90,14 @@ void leftButtonISR()
      cli(); //disable interrupts to prevent
      lbuttonCount++;
      sei(); //re-enable interrupts
-     //reset flag
+     
 }
 void rightButtonISR()
 {
      cli();
      rbuttonCount++;
      sei();    
-     //reset flag
+    
 }
 void startButtonISR()
 {
