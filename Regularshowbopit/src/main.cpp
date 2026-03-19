@@ -88,6 +88,7 @@ LiquidCrystal_PCF8574 lcd(0x27);
 // ISRs
 void leftButtonISR()
 {    
+     cli();
      lbuttonCount++;
      sei(); //re-enable interrupts
      
