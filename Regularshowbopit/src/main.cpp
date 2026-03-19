@@ -4,11 +4,11 @@
 Main File for bop it game.
 Last Updated: 3/7/2026
 Todo
-Sound selection logic
-Sound output
-Screen stuff - done? 
-accelerometer read - done
-photosensor read
+Sound selection logic -Done (untested)
+Sound output - Done (untested)
+Screen stuff - Done (untested)
+accelerometer read - done (untested)
+photosensor read 
 
 
 
@@ -56,6 +56,14 @@ extern "C"
 #define REQUIRED_ACC 15   //  Arbitrary placeholder User must shake with certain acceration for success
 #define GLOBAL_DEL 5000   // start at 5s
 #define SHAKE_THRESH 16384 // currently at +- 4G 1G is 8192 setting threshold at 2G
+
+// Pin definitions
+#define photoPin 2
+#define leftButtonPin 3
+#define rightButtonPin 4
+#define startButtonPin 5
+#define indicatorLEDPin 11
+
 
 enum state : uint8_t
 {
@@ -113,7 +121,17 @@ void startButtonISR()
 // Hardware reads
 
 
-bool readPhotoRes(void);
+bool readPhotoRes(void)
+{
+     if (digitalRead(photoPin) == HIGH)
+     {
+          return true;
+     }
+     else
+     {
+          return false;
+     }
+}
 
 // helpers
 void updateDelay()
@@ -164,6 +182,7 @@ int main(void)
                // buttons read w/ interrupts
                delay(delayms);
                // check success
+
                if (lbuttonCount + rbuttonCount >= REQUIRED_COUNT)
                {
                     score++;
@@ -221,6 +240,7 @@ int main(void)
 
                generateSound(hide);
                delay(delayms);
+               digitalWrite(indicatorLEDPin, HIGH); // turn on indicator led to show user where the light sensor is
 
                if (true) // should be volatage thresh check
                {
@@ -242,7 +262,7 @@ int main(void)
                     successful = 0;      // delete?
                     currentState = lose; // transition to lose state
                }
-
+               digitalWrite(indicatorLEDPin, LOW); // turn off indicator led
                break;
 
           case (joke):
