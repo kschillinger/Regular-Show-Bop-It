@@ -10,21 +10,22 @@ Screen stuff - Done (untested)
 accelerometer read - done (untested)
 photosensor read 
 
-
+accelerometer and photosensor read in the joke state
 
 
 Open questions
-Debouncing? hardware debounce
-screen refresh?
+Do we need to disable interrupts when reading the buttons?
+
+Debouncing 
+     -hardware debounce
+
 need a good way to show user where the light sensor is
-    blink led?
-    modify enclosure to make it obvious?
+    -led indicator that shuts off when the cover is successful
+   
 df player memory addressing
+     -landis got this squared away right? 
 when the user restarts mid game the state case will finish executing before restarting, need a way to preemmpt and force execution to restart
-    -is it possible to send a reset signal through hardware?
-    problem with that is that a second click would be needed to take the proc out of sleep mode
-    don't think this is the way to go
-    does the user even need to be able to restart mid game?
+    -solution is to send high to reset pin which resets cpu 
 */
 
 #include <Arduino.h>
@@ -88,10 +89,12 @@ LiquidCrystal_PCF8574 lcd(0x27);
 void leftButtonISR()
 {
      lbuttonCount++;
+     //reset flag
 }
 void rightButtonISR()
 {
      rbuttonCount++;
+     //reset flag
 }
 void startButtonISR()
 {
@@ -112,9 +115,10 @@ void startButtonISR()
           //for now we comment it out until further testing is done
           //generateSound(prestart);  // start the game with a countdown sound
      }
+     //reset flag
 }
 
-// Display
+
 
 
 
@@ -148,8 +152,10 @@ void updateDelay()
 
 int main(void)
 {
-     init();
-
+     interruptInit();
+     gpioInit();
+    
+ 
      // initialize accelerometer
      lis.begin(0x18);                // default I2C address
      lis.setRange(LIS3DH_RANGE_2_G); // set to +- 2g acceleration range
@@ -158,7 +164,8 @@ int main(void)
      //initialize the mp3 player
      speakerInit();
      displayInit();
-
+     //enable interrupts 
+    sei(); //master interrupt enable 
      while (1)
      {
 
@@ -269,23 +276,29 @@ int main(void)
 
                generateSound(joke);
                delay(delayms);
-               if (true) // no input im thinking they get no points for ignoring and the delay doesn't change
+               
+               
+               //check all inputs 
+               if (lbuttonCount + rbuttonCount != 0)
                {
-                    currentState = rand() % (4); // transition
+                    successful = 0;      // delete?
+                    currentState = lose; // transition to lose state
+                    break;
                }
-               else // cooked
+               lis.read(); // populates the xyz vals
+               //magnitude of at least one of the axes must be above threshold
+               if (abs(lis.z) >= SHAKE_THRESH || abs(lis.y) >= SHAKE_THRESH || abs(lis.x) >= SHAKE_THRESH)
                {
-                    if (lbuttonCount + rbuttonCount != 0)
-                    {
-                         successful = 0;      // delete?
-                         currentState = lose; // transition to lose state
-                         break;
-                    }
-                    // if accelerometer
-
-                    // if light sense
+                    successful = 0;      // delete?
+                    currentState = lose; // transition to lose state
+                    break;
+                    
                }
+               //volatage threshold check for photosensor
 
+               //no inputs detected
+               currentState = rand() % (4); // randomly select next action 0-3
+               
                break;
 
           case (win):
