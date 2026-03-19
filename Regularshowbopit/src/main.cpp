@@ -14,7 +14,7 @@ accelerometer and photosensor read in the joke state
 
 
 Open questions
-Do we need to disable interrupts when reading the buttons?
+Do we need to disable interrupts when reading the buttons? currentlythey are disabled in start and re-enabled after waking up from sleep mode, but should we disable them when reading the button counts in the mash state?
 
 Debouncing 
      -hardware debounce
@@ -80,7 +80,6 @@ enum state : uint8_t
 uint8_t currentState = prestart; // start in sleep mode
 uint16_t lbuttonCount = 0, rbuttonCount = 0;
 uint8_t score = 0x00;                        // Initialize score to 0
-uint8_t successful = 0x01;                   // Initialize to successful user input dont know if this is needed
 uint8_t delayms = GLOBAL_DEL;                // initilaize delay value to max delay
 uint8_t increment = floor(GLOBAL_DEL / 100); // get delay increment 5s del div=50ms
 Adafruit_LIS3DH lis = Adafruit_LIS3DH();
@@ -90,22 +89,26 @@ LiquidCrystal_PCF8574 lcd(0x27);
 void leftButtonISR()
 {    
      lbuttonCount++;
-     //reset flag
+     sei(); //re-enable interrupts
+     
 }
 void rightButtonISR()
 {
+     cli();
      rbuttonCount++;
-     //reset flag
+     sei();    
+    
 }
 void startButtonISR()
 {
 
-
+     //disable interrupts 
+     cli();
      if (score > 0) // user restarting mid game or at end of game
      {
         
           //send high to reset pin to restart execution
-
+          digitalWrite(resetSignalPin, HIGH);
           
 
      }
@@ -116,7 +119,8 @@ void startButtonISR()
           //for now we comment it out until further testing is done
           //generateSound(prestart);  // start the game with a countdown sound
      }
-     //reset flag
+     
+     sei();//re-enable interrupts after waking up from sleep mode
 }
 
 
@@ -130,6 +134,7 @@ bool readPhotoRes(void)
 {
      if (digitalRead(photoPin) == HIGH)
      {
+         
           return true;
      }
      else
@@ -210,7 +215,7 @@ int main(void)
                }
                else
                {
-                    successful = 0;      // delete?
+                  
                     currentState = lose; // transition to lose state
                }
                // reset click counts
@@ -241,7 +246,7 @@ int main(void)
                }
                else
                {
-                    successful = 0;      // delete?
+                    
                     currentState = lose; // transition to lose state
                }
 
@@ -251,8 +256,8 @@ int main(void)
                generateSound(hide);
                delay(delayms);
                digitalWrite(indicatorLEDPin, HIGH); // turn on indicator led to show user where the light sensor is
-
-               if (true) // should be volatage thresh check
+               
+               if (readPhotoRes()) // should be volatage thresh check
                {
                     score++;
                     displayScore(score);
@@ -269,7 +274,7 @@ int main(void)
                }
                else
                {
-                    successful = 0;      // delete?
+                  
                     currentState = lose; // transition to lose state
                }
                digitalWrite(indicatorLEDPin, LOW); // turn off indicator led
@@ -284,7 +289,7 @@ int main(void)
                //check all inputs 
                if (lbuttonCount + rbuttonCount != 0)
                {
-                    successful = 0;      // delete?
+                
                     currentState = lose; // transition to lose state
                     break;
                }
@@ -292,7 +297,7 @@ int main(void)
                //magnitude of at least one of the axes must be above threshold
                if (abs(lis.z) >= SHAKE_THRESH || abs(lis.y) >= SHAKE_THRESH || abs(lis.x) >= SHAKE_THRESH)
                {
-                    successful = 0;      // delete?
+                   
                     currentState = lose; // transition to lose state
                     break;
                     
