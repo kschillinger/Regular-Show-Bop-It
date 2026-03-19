@@ -14,6 +14,8 @@ accelerometer and photosensor read in the joke state
 
 
 Open questions
+Do we need to disable interrupts when reading the buttons?
+
 Debouncing 
      -hardware debounce
 
@@ -132,8 +134,10 @@ void updateDelay()
 
 int main(void)
 {
-     init();
-
+     interruptInit();
+     gpioInit();
+    
+ 
      // initialize accelerometer
      lis.begin(0x18);                // default I2C address
      lis.setRange(LIS3DH_RANGE_2_G); // set to +- 2g acceleration range
@@ -142,7 +146,8 @@ int main(void)
      //initialize the mp3 player
      speakerInit();
      displayInit();
-
+     //enable interrupts 
+    sei(); //master interrupt enable 
      while (1)
      {
 
