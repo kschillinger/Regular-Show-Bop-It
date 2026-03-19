@@ -54,11 +54,18 @@ extern "C"
 #define SHAKE_THRESH 16384 // currently at +- 4G 1G is 8192 setting threshold at 2G
 
 // Pin definitions
-#define photoPin 2
-#define leftButtonPin 3
-#define rightButtonPin 4
-#define startButtonPin 5
+#define photoPin 14
+#define leftButtonPin 4
+#define rightButtonPin 5
+#define startButtonPin 6
 #define indicatorLEDPin 11
+#define resetSignalPin 12 //**Note: This pin is used to signal a reset condition, not mapped to physical reset pin */
+#define displaySCLPin 28 
+#define displaySDAPin 27
+#define acclerometerPin 13
+#define lpfdPin 1
+#define speakerRXPin 2
+#define speakerTXPin 3
 
 enum state : uint8_t
 {
@@ -159,7 +166,7 @@ int main(void)
 
      //initialize the display
      displayInit();
-     
+
      //enable interrupts 
     sei(); //master interrupt enable 
      while (1)
