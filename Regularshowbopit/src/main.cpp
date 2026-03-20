@@ -80,8 +80,8 @@ extern "C"
 uint8_t currentState = prestart; // start in sleep mode
 uint16_t lbuttonCount = 0, rbuttonCount = 0;
 uint8_t score = 0x00;                        // Initialize score to 0
-uint8_t delayms = GLOBAL_DEL;                // initilaize delay value to max delay
-uint8_t increment = floor(GLOBAL_DEL / 100); // get delay increment 5s del div=50ms
+uint16_t delayms = GLOBAL_DEL;                // initilaize delay value to max delay
+uint16_t increment = floor(GLOBAL_DEL / 100); // get delay increment 5s del div=50ms
 Adafruit_LIS3DH lis = Adafruit_LIS3DH();
 LiquidCrystal_PCF8574 lcd(0x27);
 
