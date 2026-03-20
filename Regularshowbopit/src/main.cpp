@@ -67,16 +67,16 @@ extern "C"
 #define speakerRXPin 2
 #define speakerTXPin 3
 
-enum state : uint8_t
-{
-     mash,
-     shake,
-     hide,
-     joke,
-     prestart,
-     win,
-     lose
-};
+// enum state : uint8_t
+// {
+//      mash,
+//      shake,
+//      hide,
+//      joke,
+//      prestart,
+//      win,
+//      lose
+// };
 uint8_t currentState = prestart; // start in sleep mode
 uint16_t lbuttonCount = 0, rbuttonCount = 0;
 uint8_t score = 0x00;                        // Initialize score to 0
