@@ -8,7 +8,7 @@
 #include <avr/sleep.h>
 #include <avr/power.h>
 #include <avr/interrupt.h>
-
+#include <PinChangeInterrupt.h>
 //Pin definitions
 #define photoPin 14
 #define leftButtonPin 4
