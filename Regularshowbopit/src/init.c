@@ -8,7 +8,7 @@
 #include <avr/sleep.h>
 #include <avr/power.h>
 #include <avr/interrupt.h>
-#include <PinChangeInterrupt.h>
+
 //Pin definitions
 #define photoPin 14
 #define leftButtonPin 4
@@ -41,9 +41,9 @@ void gpioInit()
 
 void interruptInit()
 {
-    attachInterrupt(digitalPinToInterrupt(2),leftButtonISR,FALLING);//Enable interrupt for left button
-    attachInterrupt(digitalPinToInterrupt(3),rightButtonISR,FALLING);//Enable interrupt for right button
-    attachPCINT(digitalPinToPCINT(4),startButtonISR,FALLING);//Enable interrupt for reset button
+    attachInterrupt(digitalPinToInterrupt(2),mashButtonISR,FALLING);//Enable interrupt for left button
+    attachInterrupt(digitalPinToInterrupt(4),startButtonISR,FALLING);//Enable interrupt for reset button
+   
 }
 
 

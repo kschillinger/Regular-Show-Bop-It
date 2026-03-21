@@ -5,9 +5,9 @@ void gpioInit();
 void interruptInit();
 void timerInit(); //i cant remember why i included --> nice
 
-// Forward declarations of ISRs defined in main.cpp
-void leftButtonISR(void);
-void rightButtonISR(void);
+
+void mashButtonISR(void);
+
 void startButtonISR(void);
 
 

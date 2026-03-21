@@ -37,7 +37,7 @@ when the user restarts mid game the state case will finish executing before rest
 #include <SoftwareSerial.h>
 #include <speakerConfig.hpp>
 #include <displayConfig.hpp>
-#include <PinChangeInterrupt.h>
+
 
 // Screen driver header
 #include <SPI.h>
@@ -86,14 +86,8 @@ Adafruit_LIS3DH lis = Adafruit_LIS3DH();
 LiquidCrystal_PCF8574 lcd(0x27);
 
 // ISRs
-void leftButtonISR()
-{    
-     cli();
-     lbuttonCount++;
-     sei(); //re-enable interrupts
-     
-}
-void rightButtonISR()
+
+void mashButtonISR()
 {
      cli();
      rbuttonCount++;
