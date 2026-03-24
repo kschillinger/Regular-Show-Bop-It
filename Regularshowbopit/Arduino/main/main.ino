@@ -1,26 +1,7 @@
-
-
 /*
 Main File for bop it game.
-Last Updated: 3/7/2026
-Todo
-Sound selection logic -Done (untested)
-Sound output - Done (untested)
-Screen stuff - Done (untested)
-accelerometer read - done (untested)
-photosensor read 
-
-accelerometer and photosensor read in the joke state
-
-
-Open questions
-Do we need to disable interrupts when reading the buttons? currentlythey are disabled in start and re-enabled after waking up from sleep mode, but should we disable them when reading the button counts in the mash state?
-
-Debouncing 
-     -hardware debounce
-   
-when the user restarts mid game the state case will finish executing before restarting, need a way to preemmpt and force execution to restart
-    -solution is to send high to reset pin which resets cpu 
+Last Updated: 3/24/2026
+Rewritten for Arduino IDE using setup()/loop()
 */
 
 #include <Arduino.h>
@@ -38,109 +19,69 @@ when the user restarts mid game the state case will finish executing before rest
 #include "speakerConfig.hpp"
 #include "displayConfig.hpp"
 
-
-// Screen driver header
-#include <SPI.h>
-#include <U8g2lib.h>
-
 extern "C"
 {
 #include "init.h"
 }
+
 // Globals
-#define REQUIRED_COUNT 5 // User must mash buttons 5 times for success
-#define REQUIRED_ACC 15   //  Arbitrary placeholder User must shake with certain acceration for success
-#define GLOBAL_DEL 5000   // start at 5s
-#define SHAKE_THRESH 16384 // currently at +- 4G 1G is 8192 setting threshold at 2G
+#define REQUIRED_COUNT 5
+#define GLOBAL_DEL 5000
+#define SHAKE_THRESH 16384
 
 // Pin definitions
 #define photoPin 14
 #define mashButtonPin 4
 #define startButtonPin 5
 #define indicatorLEDPin 11
-#define resetSignalPin 12 //**Note: This pin is used to signal a reset condition, not mapped to physical reset pin */
-#define displaySCLPin 28 
+#define resetSignalPin 12
+#define displaySCLPin 28
 #define displaySDAPin 27
 #define acclerometerPin 13
 #define lpfdPin 1
 #define speakerRXPin 2
 #define speakerTXPin 3
 
-// enum state : uint8_t
-// {
-//      mash,
-//      shake,
-//      hide,
-//      joke,
-//      prestart,
-//      win,
-//      lose
-// };
-uint8_t currentState = prestart; // start in sleep mode
-uint16_t mashbuttonCount = 0;
-uint8_t score = 0x00;                        // Initialize score to 0
-uint16_t delayms = GLOBAL_DEL;                // initilaize delay value to max delay
-uint8_t increment = floor(GLOBAL_DEL / 100); // get delay increment 5s del div=50ms
+// State variables
+uint8_t currentState = prestart;
+volatile uint16_t mashbuttonCount = 0;  // volatile - modified in ISR
+uint8_t score = 0x00;
+uint16_t delayms = GLOBAL_DEL;
+uint8_t increment = GLOBAL_DEL / 100;
+
+// Peripherals
 Adafruit_LIS3DH lis = Adafruit_LIS3DH();
 LiquidCrystal_PCF8574 lcd(0x27);
 
-// ISRs
-
+// ISRs - interrupts are already disabled when an ISR runs,
+// so no need for cli()/sei() inside them
 void mashButtonISR()
 {
-     cli();
      mashbuttonCount++;
-     sei();    
-    
 }
+
 void startButtonISR()
 {
-
-     //disable interrupts 
-     cli();
-     if (score > 0) // user restarting mid game or at end of game
+     if (score > 0)
      {
-        
-          //send high to reset pin to restart execution
-          digitalWrite(resetSignalPin, HIGH);
-          
-
+          digitalWrite(resetSignalPin, LOW);
      }
      else
      {
-          sleep_disable(); // restart execution
-          
-          //for now we comment it out until further testing is done
-          //generateSound(prestart);  // start the game with a countdown sound
+          sleep_disable();
      }
-     
-     sei();//re-enable interrupts after waking up from sleep mode
 }
-
-
-
-
 
 // Hardware reads
-
-
 bool readPhotoRes(void)
 {
-     if (digitalRead(photoPin) == HIGH)
-     {
-         
-          return true;
-     }
-     else
-     {
-          return false;
-     }
+     return (digitalRead(photoPin) == HIGH);
 }
 
-// helpers
+// Helpers
 void updateDelay()
 {
-     if (delayms - increment <= 0) // should never happen
+     if (delayms <= increment)
      {
           delayms = 200;
      }
@@ -150,174 +91,149 @@ void updateDelay()
      }
 }
 
-int main(void)
+void setup()
 {
-     interruptInit();
+     Serial.begin(9600);
+
      gpioInit();
- 
-     // initialize accelerometer
-     lis.begin(0x18);                // default I2C address
-     lis.setRange(LIS3DH_RANGE_2_G); // set to +- 2g acceleration range
+     interruptInit();
+
+     // Initialize accelerometer
+     lis.begin(0x18);
+     lis.setRange(LIS3DH_RANGE_2_G);
      lis.setDataRate(LIS3DH_DATARATE_50_HZ);
 
-     //initialize the mp3 player
+     // Initialize mp3 player
      speakerInit();
 
-     //initialize the display
+     // Initialize display
      displayInit();
 
-     //enable interrupts 
-    sei(); //master interrupt enable 
-     while (1)
+     sei();
+}
+
+void loop()
+{
+     Serial.print("State: ");
+     Serial.println(currentState);
+     
+     switch (currentState)
      {
+     case prestart:
+          displayStartingMessage();
 
-          switch (currentState)
+          set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+           sleep_enable();
+           sleep_cpu();
+          // Wakes here after start button ISR
+          displayScore(score);
+          currentState = rand() % 4;
+          break;  // was missing before - caused fall-through into mash
+
+     case mash:
+          generateSound(mash);
+          delay(delayms);
+
+          if (mashbuttonCount >= REQUIRED_COUNT)
           {
-          case (prestart):
-               displayStartingMessage();
-
-               // put cpu into low power mode
-               // only interrupts and timer2 active
-               set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-               sleep_enable();
-               sleep_cpu();
-               // start button triggers interrupt and takes out of sleep state
+               score++;
                displayScore(score);
-               currentState = rand() % (4); // start the game
-
-          // since interrupts are needed to read the button clicks no Buttone read function is needed
-          case (mash):
-               generateSound(mash);
-               // buttons read w/ interrupts
-               delay(delayms);
-               // check success
-
-               if (mashbuttonCount >= REQUIRED_COUNT)
+               if (score >= 99)
                {
-                    score++;
-                    displayScore(score);
-
-                    if (score >= 99) // winning score
-                    {
-                         currentState = win;
-                    }
-                    else
-                    {
-                         currentState = rand() % (4); // randomly select next action 0-3
-                         updateDelay();
-                    }
+                    currentState = win;
                }
                else
                {
-                  
-                    currentState = lose; // transition to lose state
+                    currentState = rand() % 4;
+                    updateDelay();
                }
-               // reset click counts
-               mashbuttonCount = 0;
-               break;
+          }
+          else
+          {
+               currentState = lose;
+          }
+          mashbuttonCount = 0;
+          break;
 
-          case (shake):
-
-               generateSound(shake);
-               delay(delayms);
-               // read accelerometer
-               lis.read(); // populates the xyz vals
-               //magnitude of at least one of the axes must be above threshold
-               if (abs(lis.z) >= SHAKE_THRESH || abs(lis.y) >= SHAKE_THRESH || abs(lis.x) >= SHAKE_THRESH)
+     case shake:
+          generateSound(shake);
+          delay(delayms);
+          lis.read();
+          if (abs(lis.z) >= SHAKE_THRESH || abs(lis.y) >= SHAKE_THRESH || abs(lis.x) >= SHAKE_THRESH)
+          {
+               score++;
+               displayScore(score);
+               if (score >= 99)
                {
-                    score++;
-                    displayScore(score);
-                    if (score >= 99) // winning score
-                    {
-                         currentState = win;
-                    }
-                    else
-                    {
-                         currentState = rand() % (4); // randomly select next action 0-3
-                         updateDelay();
-                    }
+                    currentState = win;
                }
                else
                {
-                    
-                    currentState = lose; // transition to lose state
+                    currentState = rand() % 4;
+                    updateDelay();
                }
+          }
+          else
+          {
+               currentState = lose;
+          }
+          break;
 
-               break;
-          case (hide):
+     case hide:
+          generateSound(hide);
+          delay(delayms);
+          digitalWrite(indicatorLEDPin, HIGH);
 
-               generateSound(hide);
-               delay(delayms);
-               digitalWrite(indicatorLEDPin, HIGH); // turn on indicator led to show user where the light sensor is
-               
-               if (readPhotoRes()) // should be volatage thresh check
+          if (readPhotoRes())
+          {
+               score++;
+               displayScore(score);
+               if (score >= 99)
                {
-                    score++;
-                    displayScore(score);
-
-                    if (score >= 99) // winning score
-                    {
-                         currentState = win;
-                    }
-                    else
-                    {
-                         currentState = rand() % (4); // randomly select next action 0-3
-                         updateDelay();
-                    }
+                    currentState = win;
                }
                else
                {
-                  
-                    currentState = lose; // transition to lose state
+                    currentState = rand() % 4;
+                    updateDelay();
                }
-               digitalWrite(indicatorLEDPin, LOW); // turn off indicator led
-               break;
+          }
+          else
+          {
+               currentState = lose;
+          }
+          digitalWrite(indicatorLEDPin, LOW);
+          break;
 
-          case (joke):
+     case joke:
+          generateSound(joke);
+          delay(delayms);
 
-               generateSound(joke);
-               delay(delayms);
-               
-               
-               //check all inputs 
-               if (mashbuttonCount != 0)
-               {
-                
-                    currentState = lose; // transition to lose state
-                    break;
-               }
-               lis.read(); // populates the xyz vals
-               //magnitude of at least one of the axes must be above threshold
-               if (abs(lis.z) >= SHAKE_THRESH || abs(lis.y) >= SHAKE_THRESH || abs(lis.x) >= SHAKE_THRESH)
-               {
-                   
-                    currentState = lose; // transition to lose state
-                    break;
-                    
-               }
-               //volatage threshold check for photosensor
-
-               //no inputs detected
-               currentState = rand() % (4); // randomly select next action 0-3
-               
-               break;
-
-          case (win):
-               displayMessage("You Win!", score);
-               generateSound(win);
-               while (1) // continuously show victory until restart or shut off
-               {
-               }
-               break;
-          case (lose):
-
-               displayMessage("You Lose!", score);
-               generateSound(lose);
-               while (1)
-               {
-               }
-
+          if (mashbuttonCount != 0)
+          {
+               currentState = lose;
                break;
           }
+          lis.read();
+          if (abs(lis.z) >= SHAKE_THRESH || abs(lis.y) >= SHAKE_THRESH || abs(lis.x) >= SHAKE_THRESH)
+          {
+               currentState = lose;
+               break;
+          }
+
+          currentState = rand() % 4;
+          break;
+
+     case win:
+          displayMessage("You Win!", score);
+          generateSound(win);
+          while (1) { }
+          break;
+
+     case lose:
+          displayMessage("You Lose!", score);
+          generateSound(lose);
+          while (1) { }
+          break;
      }
 }
