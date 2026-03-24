@@ -48,6 +48,8 @@ volatile uint16_t mashbuttonCount = 0;  // volatile - modified in ISR
 uint8_t score = 0x00;
 uint16_t delayms = GLOBAL_DEL;
 uint8_t increment = GLOBAL_DEL / 100;
+sensors_event_t event;
+
 
 // Peripherals
 Adafruit_LIS3DH lis = Adafruit_LIS3DH();
@@ -122,10 +124,6 @@ void loop()
 {
     
      
-         
-     
-    
-
      Serial.print("State: ");
      Serial.println(currentState);
      
@@ -170,8 +168,9 @@ void loop()
      case shake:
           generateSound(shake);
           delay(delayms);
-          lis.getEvent();
           lis.read();
+          lis.getEvent(&event);
+         
           if (abs(lis.z) >= SHAKE_THRESH || abs(lis.y) >= SHAKE_THRESH || abs(lis.x) >= SHAKE_THRESH)
           {
                score++;
