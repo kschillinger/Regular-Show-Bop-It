@@ -48,16 +48,15 @@ extern "C"
 #include "init.h"
 }
 // Globals
-#define REQUIRED_COUNT 10 // User must mash buttons 10 times for success
+#define REQUIRED_COUNT 5 // User must mash buttons 5 times for success
 #define REQUIRED_ACC 15   //  Arbitrary placeholder User must shake with certain acceration for success
 #define GLOBAL_DEL 5000   // start at 5s
 #define SHAKE_THRESH 16384 // currently at +- 4G 1G is 8192 setting threshold at 2G
 
 // Pin definitions
 #define photoPin 14
-#define leftButtonPin 4
-#define rightButtonPin 5
-#define startButtonPin 6
+#define mashButtonPin 4
+#define startButtonPin 5
 #define indicatorLEDPin 11
 #define resetSignalPin 12 //**Note: This pin is used to signal a reset condition, not mapped to physical reset pin */
 #define displaySCLPin 28 
@@ -78,7 +77,7 @@ extern "C"
 //      lose
 // };
 uint8_t currentState = prestart; // start in sleep mode
-uint16_t lbuttonCount = 0, rbuttonCount = 0;
+uint16_t mashbuttonCount = 0;
 uint8_t score = 0x00;                        // Initialize score to 0
 uint16_t delayms = GLOBAL_DEL;                // initilaize delay value to max delay
 uint8_t increment = floor(GLOBAL_DEL / 100); // get delay increment 5s del div=50ms
@@ -90,7 +89,7 @@ LiquidCrystal_PCF8574 lcd(0x27);
 void mashButtonISR()
 {
      cli();
-     rbuttonCount++;
+     mashbuttonCount++;
      sei();    
     
 }
@@ -193,7 +192,7 @@ int main(void)
                delay(delayms);
                // check success
 
-               if (lbuttonCount + rbuttonCount >= REQUIRED_COUNT)
+               if (mashbuttonCount >= REQUIRED_COUNT)
                {
                     score++;
                     displayScore(score);
@@ -214,8 +213,7 @@ int main(void)
                     currentState = lose; // transition to lose state
                }
                // reset click counts
-               lbuttonCount = 0;
-               rbuttonCount = 0;
+               mashbuttonCount = 0;
                break;
 
           case (shake):
@@ -282,7 +280,7 @@ int main(void)
                
                
                //check all inputs 
-               if (lbuttonCount + rbuttonCount != 0)
+               if (mashbuttonCount != 0)
                {
                 
                     currentState = lose; // transition to lose state

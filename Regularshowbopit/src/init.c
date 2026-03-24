@@ -11,9 +11,8 @@
 
 //Pin definitions
 #define photoPin 14
-#define leftButtonPin 4
-#define rightButtonPin 5
-#define startButtonPin 6
+#define mashButtonPin 4
+#define startButtonPin 5
 #define indicatorLEDPin 11
 #define resetSignalPin 12 //**Note: This pin is used to signal a reset condition, not mapped to physical reset pin */
 #define displaySCLPin 28 
@@ -26,8 +25,7 @@
 void gpioInit()
 {
         pinMode(photoPin, INPUT);
-        pinMode(leftButtonPin, INPUT);
-        pinMode(rightButtonPin, INPUT);
+        pinMode(mashButtonPin, INPUT);
         pinMode(resetSignalPin, OUTPUT);
         pinMode(indicatorLEDPin, OUTPUT);
         pinMode(startButtonPin, INPUT);
