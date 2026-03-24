@@ -35,6 +35,7 @@ void gpioInit()
         pinMode(lpfdPin, INPUT);
         pinMode(speakerRXPin, OUTPUT);
         pinMode(speakerTXPin, INPUT);
+        digitalWrite(resetSignalPin, LOW); // set reset signal pin low to start
 }
 
 void interruptInit()
