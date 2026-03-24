@@ -53,6 +53,7 @@ enum soundID_Actions : uint8_t
 
 enum soundID_Jokes : uint8_t
 {
+    ID_NUll = 000,
     ID_JOKE1 = 001,
     ID_JOKE2 = 002,
     ID_JOKE3 = 003,
@@ -102,6 +103,8 @@ soundID_Jokes randomJokeID()
         case 5:
             return ID_JOKE5;
             break;
+        default:
+            return ; //should never happen
     }
 }
 
