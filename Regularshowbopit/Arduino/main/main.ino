@@ -103,15 +103,15 @@ void setup()
      digitalWrite(8,HIGH);
      interruptInit();
 
-     Initialize accelerometer
+     //Initialize accelerometer
      lis.begin(0x18);
      lis.setRange(LIS3DH_RANGE_2_G);
      lis.setDataRate(LIS3DH_DATARATE_50_HZ);
 
-     Initialize mp3 player
+     //Initialize mp3 player
      speakerInit();
 
-     Initialize display
+    // Initialize display
     displayInit();
 
      sei();
@@ -120,7 +120,7 @@ void setup()
 
 void loop()
 {
-     lis.read();
+    
      
          
      
@@ -170,6 +170,7 @@ void loop()
      case shake:
           generateSound(shake);
           delay(delayms);
+          lis.getEvent();
           lis.read();
           if (abs(lis.z) >= SHAKE_THRESH || abs(lis.y) >= SHAKE_THRESH || abs(lis.x) >= SHAKE_THRESH)
           {
