@@ -30,17 +30,17 @@ extern "C"
 #define SHAKE_THRESH 16384
 
 // Pin definitions
-#define photoPin 14
-#define mashButtonPin 4
-#define startButtonPin 5
-#define indicatorLEDPin 11
-#define resetSignalPin 12
-#define displaySCLPin 28
-#define displaySDAPin 27
-#define acclerometerPin 13
-#define lpfdPin 1
-#define speakerRXPin 2
-#define speakerTXPin 3
+#define photoPin 8 //phys 14
+#define mashButtonPin 2 //pys 4
+#define startButtonPin 3 //phys5
+#define indicatorLEDPin 5 //phys11
+#define resetSignalPin 6 //phys12
+#define displaySCLPin 28 //analog 5
+#define displaySDAPin 27 //analog 4
+#define acclerometerPin 7 //phys 13
+//#define lpfdPin 1
+#define speakerRXPin 0//phys2 
+#define speakerTXPin 1//phys3
 
 // State variables
 uint8_t currentState = prestart;
@@ -62,6 +62,7 @@ void mashButtonISR()
 
 void startButtonISR()
 {
+     detachInterrupt(digitalPinToInterrupt(3));
      if (score > 0)
      {
           digitalWrite(resetSignalPin, LOW);
@@ -70,6 +71,7 @@ void startButtonISR()
      {
           sleep_disable();
      }
+      attachInterrupt(digitalPinToInterrupt(3),startButtonISR,LOW);
 }
 
 // Hardware reads
@@ -93,27 +95,37 @@ void updateDelay()
 
 void setup()
 {
+     
+     
      Serial.begin(9600);
 
      gpioInit();
+     digitalWrite(8,HIGH);
      interruptInit();
 
-     // Initialize accelerometer
+     Initialize accelerometer
      lis.begin(0x18);
      lis.setRange(LIS3DH_RANGE_2_G);
      lis.setDataRate(LIS3DH_DATARATE_50_HZ);
 
-     // Initialize mp3 player
+     Initialize mp3 player
      speakerInit();
 
-     // Initialize display
-     displayInit();
+     Initialize display
+    displayInit();
 
      sei();
+     
 }
 
 void loop()
 {
+     lis.read();
+     
+         
+     
+    
+
      Serial.print("State: ");
      Serial.println(currentState);
      

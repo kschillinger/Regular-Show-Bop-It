@@ -40,8 +40,8 @@ void gpioInit()
 
 void interruptInit()
 {
-    attachInterrupt(digitalPinToInterrupt(2),mashButtonISR,FALLING);//Enable interrupt for left button
-    attachInterrupt(digitalPinToInterrupt(3),startButtonISR,FALLING);//Enable interrupt for reset button
+    attachInterrupt(digitalPinToInterrupt(2),mashButtonISR,LOW);//Enable interrupt for left button
+    attachInterrupt(digitalPinToInterrupt(3),startButtonISR,LOW);//Enable interrupt for reset button
    
 }
 
