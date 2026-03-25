@@ -2,6 +2,8 @@
 Main File for bop it game.
 Last Updated: 3/24/2026
 Rewritten for Arduino IDE using setup()/loop()
+
+todo add loop for accelerometer polling
 */
 
 #include <Arduino.h>
@@ -49,7 +51,8 @@ uint8_t score = 0x00;
 uint16_t delayms = GLOBAL_DEL;
 uint8_t increment = GLOBAL_DEL / 100;
 sensors_event_t event;
-
+volatile unsigned long lastPressTimeMash = 0;
+volatile unsigned long lastPressTimeReset = 0;
 
 // Peripherals
 Adafruit_LIS3DH lis = Adafruit_LIS3DH();
@@ -59,21 +62,31 @@ LiquidCrystal_PCF8574 lcd(0x27);
 // so no need for cli()/sei() inside them
 void mashButtonISR()
 {
-     mashbuttonCount++;
+     cli();
+  unsigned long now = millis();
+  if (now - lastPressTimeMash > 7.5) {   // 50 ms debounce window
+    pressCount++;
+    lastPressTime = now;
+  }
+  sei();
 }
 
 void startButtonISR()
 {
      detachInterrupt(digitalPinToInterrupt(3));
-     if (score > 0)
-     {
-          digitalWrite(resetSignalPin, LOW);
-     }
-     else
-     {
-          sleep_disable();
-     }
-      attachInterrupt(digitalPinToInterrupt(3),startButtonISR,LOW);
+      if (now - lastPressTimeReset > 7.5)
+      {
+          if (score > 0)
+          {
+               digitalWrite(resetSignalPin, LOW);
+          }
+          else
+          {
+               sleep_disable();
+          }
+         
+      }
+       attachInterrupt(digitalPinToInterrupt(3),startButtonISR,LOW);
 }
 
 // Hardware reads
@@ -239,7 +252,7 @@ void loop()
      case win:
           displayMessage("You Win!", score);
           generateSound(win);
-          while (1) { }
+          while (1) { } //sticking here may be a problem
           break;
 
      case lose:
