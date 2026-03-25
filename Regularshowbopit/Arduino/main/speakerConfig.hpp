@@ -65,12 +65,12 @@ void speakerInit()
 {
     mp3Serial.begin(9600);
     if (!mp3.begin(mp3Serial)) {  //Use softwareSerial to communicate with mp3.
-        //Serial.println(F("Unable to begin:"));
-        //Serial.println(F("1.Please recheck the connection!"));
-        //Serial.println(F("2.Please insert the SD card!"));
+        Serial.println(F("Unable to begin:"));
+        Serial.println(F("1.Please recheck the connection!"));
+        Serial.println(F("2.Please insert the SD card!"));
         while(true);
     }
-    //Serial.println(F("DFPlayer Mini online."));
+    Serial.println(F("DFPlayer Mini online."));
     
     mp3.setTimeOut(500); //Set serial communictaion time out 500ms
 
