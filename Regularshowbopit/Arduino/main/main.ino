@@ -20,6 +20,7 @@ todo add loop for accelerometer polling
 #include <SoftwareSerial.h>
 #include "speakerConfig.hpp"
 #include "displayConfig.hpp"
+#include <avr/wdt.h>
 
 extern "C" {
 #include "init.h"
@@ -28,7 +29,8 @@ extern "C" {
 // Globals
 #define REQUIRED_COUNT 5
 #define GLOBAL_DEL 5000
-#define SHAKE_THRESH 16384
+//#define SHAKE_THRESH 16384
+#define SHAKE_THRESH 10000
 
 // Pin definitions
 #define photoPin 8         //phys 14
@@ -79,11 +81,16 @@ void startButtonISR() {
  // detachInterrupt(digitalPinToInterrupt(3));
   if (now - lastPressTimeReset > DEBOUNCETIME) {
     lastPressTimeReset = now;
-    if (score > 0) {
-      digitalWrite(resetSignalPin, LOW);
-    } else {
+    if(currentState==prestart)
+    {
       sleep_disable();
     }
+    else
+    {
+       wdt_enable(WDTO_15MS);  // watchdog fires in 15ms
+      while(1); 
+    }
+    
   }
 }
 
@@ -102,7 +109,8 @@ void updateDelay() {
 }
 
 void setup() {
-
+   MCUSR &= ~(1 << WDRF); 
+wdt_disable();
 
   Serial.begin(9600);
 
@@ -110,8 +118,7 @@ void setup() {
 
   digitalWrite(8, HIGH);
 
-  interruptInit();
-
+  
   //Initialize accelerometer
   lis.begin(0x18);
 
@@ -125,6 +132,9 @@ void setup() {
   // Initialize display
   displayInit();
      srand(analogRead(A3));
+     delay(2000);
+     interruptInit();
+
   sei();
 }
 
@@ -133,6 +143,7 @@ void loop() {
 
      Serial.print("Score =");
      Serial.println(score);
+     Serial.println(currentState);
      //Serial.println(currentState);
      delay(1000);
   switch (currentState) {
@@ -146,68 +157,71 @@ void loop() {
       // Wakes here after start button ISR
      // displayScore(score);
       Serial.println("prestart");
-     // currentState = rand() % 4;
-      currentState = hide;
+     currentState = rand() % 4;
+      
       break;  // was missing before - caused fall-through into mash
 
-    // case mash:
-    //       Serial.println("mash");
-    //   //generateSound(mash);
-    //   delay(delayms);
+    case mash:
+          Serial.println("mash");
+      //generateSound(mash);
+      delay(delayms);
 
-    //   if (mashbuttonCount >= REQUIRED_COUNT) {
-    //     score++;
-    //     //displayScore(score);
-    //     if (score >= 99) {
-    //       currentState = win;
-    //     } else {
+      if (mashbuttonCount >= REQUIRED_COUNT) {
+        score++;
+        //displayScore(score);
+        if (score >= 99) {
+          currentState = win;
+        } else {
           
-    //        //currentState = rand() % 4;
-    //       updateDelay();
-    //     }
-    //   } else {
-    //     currentState = lose;
-    //   }
-    //   Serial.print(mashbuttonCount);
-    //   mashbuttonCount = 0;
-    //   break;
+           currentState = rand() % 4;
+          updateDelay();
+        }
+      } else {
+        currentState = lose;
+      }
+      Serial.print(mashbuttonCount);
+      mashbuttonCount = 0;
+      break;
 
-    // case shake:
-    //  Serial.println("SHAKE");
-    //   //generateSound(shake);
-    //   float x=0,y=0,z=0;
+    case shake:
+    {
+     Serial.println("SHAKE");
+      //generateSound(shake);
+      float x=0,y=0,z=0;
 
-    //   for(int i=0;i<10;i++) //sample accelerometer 10x
-    //   {
+      for(int i=0;i<10;i++) //sample accelerometer 10x
+      {
         
-    //     lis.read();
-    //     x+= abs(lis.x);
-    //     y+= abs(lis.y);
-    //     z+= abs(lis.z);
-    //     delay(delayms/10);
-    //   }
-    //   //average reading
-    //   x=x/10;
-    //   y=y/10;
-    //   z=z/10;
+        lis.read();
+        x+= abs(lis.x);
+        y+= abs(lis.y);
+        z+= abs(lis.z);
+        delay(delayms/10);
+      }
+      //average reading
+      x=x/10;
+      y=y/10;
+      z=z/10;
       
-    //  // lis.getEvent(&event);
+     // lis.getEvent(&event);
 
-    //   if (x >= SHAKE_THRESH || y >= SHAKE_THRESH || x >= SHAKE_THRESH) {
-    //     score++;
-    //     displayScore(score);
-    //     if (score >= 99) {
-    //       currentState = win;
-    //     } else {
-    //       currentState = shake;
-    //       updateDelay();
-    //     }
-    //   } else {
-    //     currentState = lose;
-    //   }
-    //   break;
-
+      if (x >= SHAKE_THRESH || y >= SHAKE_THRESH || z >= SHAKE_THRESH) {
+        score++;
+        displayScore(score);
+        if (score >= 99) {
+          currentState = win;
+        } else {
+          currentState = rand() % 4;
+          updateDelay();
+        }
+      } else {
+        currentState = lose;
+      }
+      mashbuttonCount=0;
+      break;
+    }
     case hide:
+    {
     Serial.println("hide");
       //generateSound(hide);
         digitalWrite(indicatorLEDPin, HIGH);
@@ -224,54 +238,97 @@ void loop() {
       }
       if (covered) 
       {
+        Serial.println("covered");
         score++;
-        displayScore(score);
+       // displayScore(score);
         if (score >= 99) {
           currentState = win;
-        } else {
-          // currentState = rand() % 4;
-          currentState =hide;
+        }
+         else
+         {
+          currentState = rand() % 4;
+          Serial.println("succ");
+       
           updateDelay();
         }
       } 
       else 
       {
+        Serial.println("lost");
         currentState = lose;
+        Serial.println("exe");
       }
       digitalWrite(indicatorLEDPin, LOW);
       break;
+  }
 
-    // case joke:
-    // Serial.println("joke");
-    //   //generateSound(joke);
-    //   delay(delayms);
+    case joke:
+    {
+    bool action=false;
+    Serial.println("joke");
+      //generateSound(joke);
 
-    //   if (mashbuttonCount != 0) {
-    //     currentState = lose;
-    //     break;
-    //   }
-    //   lis.read();
-    //   if (abs(lis.z) >= SHAKE_THRESH || abs(lis.y) >= SHAKE_THRESH || abs(lis.x) >= SHAKE_THRESH) {
-    //     currentState = lose;
-    //     break;
-    //   }
+      
+      
+      float x=0,y=0,z=0;
+   
+      
+      for(int i=0;i<10;i++) //sample  10x
+      {
+        
+        lis.read();
+        x+= abs(lis.x);
+        y+= abs(lis.y);
+        z+= abs(lis.z);
+        if(readPhotoRes())
+        {
+          action=true;
+          break;
+        }
+        if (mashbuttonCount != 0) 
+        {
+          action=true;
+          break;
+        }
+        delay(delayms/10);
+      }
+      //average reading
+      x=x/10;
+      y=y/10;
+      z=z/10;
+      if(x >= SHAKE_THRESH || y >= SHAKE_THRESH || z >= SHAKE_THRESH) 
+      {
+        action=true;
+      }
 
-    //   currentState = rand() % 4;
-    //   break;
-
-    // case win:
-    // Serial.println("win");
-    //   displayMessage("You Win!", score);
-    //   //generateSound(win);
-    //   while (1) {}  //sticking here may be a problem
-    //   break;
+     
+      if(action)
+      {
+        if(score>0)
+        {
+          score--;
+        }
+        
+      }
+      
+      currentState = rand() % 4;
+      break;
+    }
+    case win:
+    Serial.println("win");
+      displayMessage("You Win!", score);
+      //generateSound(win);
+      while (1) {}  //sticking here may be a problem
+      break;
 
     case lose:
     Serial.print("lose");
-      displayMessage("You Lose!", score);
+      //displayMessage("You Lose!", score);
       //generateSound(lose);
       Serial.print("loser landis");
-      while (1);
+      while (1){};
       break;
+     default:
+      Serial.println("not a state");
   }
 }

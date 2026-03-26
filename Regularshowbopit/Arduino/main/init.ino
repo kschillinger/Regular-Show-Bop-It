@@ -31,18 +31,16 @@ void gpioInit() {
   pinMode(resetSignalPin, OUTPUT);
   pinMode(indicatorLEDPin, OUTPUT);
   pinMode(startButtonPin, INPUT);
-  pinMode(displaySCLPin, OUTPUT);
-  pinMode(displaySDAPin, OUTPUT);
   pinMode(acclerometerPin, INPUT);
   //pinMode(lpfdPin, INPUT);
   pinMode(speakerRXPin, OUTPUT);
   pinMode(speakerTXPin, INPUT);
-  digitalWrite(resetSignalPin, LOW);  // set reset signal pin low to start
+  
 }
 
 void interruptInit() 
 {
-
+  digitalWrite(resetSignalPin, HIGH);  // set reset signal pin low to start
   attachInterrupt(digitalPinToInterrupt(2), mashButtonISR, RISING);  //Enable interrupt for left button
 
   attachInterrupt(digitalPinToInterrupt(3), startButtonISR, RISING);  //Enable interrupt for reset button
