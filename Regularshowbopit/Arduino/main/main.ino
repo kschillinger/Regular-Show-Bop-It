@@ -128,7 +128,7 @@ wdt_disable();
   lis.setDataRate(LIS3DH_DATARATE_50_HZ);
 
   //Initialize mp3 player
-  //speakerInit();
+  speakerInit();
 
   // Initialize display
   displayInit();                                     
@@ -137,17 +137,18 @@ wdt_disable();
      interruptInit();
      EIFR = (1 << INTF0) | (1 << INTF1);  // clear INT0/INT1 flags
 
+
   sei();
 }
 
 void loop() {
 
 
-     Serial.print("Score =");
-     Serial.println(score);
-     Serial.println(currentState);
+   
      //Serial.println(currentState);
      delay(1000);
+    playAndWait(1,1);
+
   switch (currentState) {
     case prestart:
      displayStartingMessage();
@@ -158,7 +159,7 @@ void loop() {
        sleep_cpu();
       // Wakes here after start button ISR
      // displayScore(score);
-      Serial.println("prestart");
+      
       lcd.clear();
       displayScore(score);
      currentState = rand() % 4;
@@ -183,7 +184,7 @@ void loop() {
       } else {
         currentState = lose;
       }
-      Serial.print(mashbuttonCount);
+     
       mashbuttonCount = 0;
       break;
 
@@ -243,7 +244,7 @@ void loop() {
       }
       if (covered) 
       {
-        Serial.println("covered");
+        
         score++;
        displayScore(score);
         if (score >= 99) {
@@ -252,16 +253,16 @@ void loop() {
          else
          {
           currentState = rand() % 4;
-          Serial.println("succ");
+          
        
           updateDelay();
         }
       } 
       else 
       {
-        Serial.println("lost");
+       
         currentState = lose;
-        Serial.println("exe");
+        
       }
       digitalWrite(indicatorLEDPin, LOW);
       break;
@@ -322,7 +323,7 @@ void loop() {
       break;
     }
     case win:
-    Serial.println("win");
+    
       displayMessage("You Win!", score);
       //generateSound(win);
       currentState=prestart;
@@ -330,14 +331,14 @@ void loop() {
       break;
 
     case lose:
-    Serial.print("lose");
+    
       displayMessage("Loser Landisss", score);
       //generateSound(lose);
-      Serial.print("loser landis");
+    
       currentState=prestart;
       while (1){};
       break;
-     default:
-      Serial.println("not a state");
-  }
+
+
+    }
 }

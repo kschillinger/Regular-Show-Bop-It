@@ -26,7 +26,7 @@
         ....mp3
 */
 
-SoftwareSerial mp3Serial(10,11); //rx, tx for ATMEGA
+//SoftwareSerial mp3Serial(0,1); //rx, tx for ATMEGA
 DFRobotDFPlayerMini mp3;
 
 enum state : uint8_t
@@ -63,8 +63,9 @@ enum soundID_Jokes : uint8_t
 
 void speakerInit()
 {
-    mp3Serial.begin(9600);
-    if (!mp3.begin(mp3Serial)) {  //Use softwareSerial to communicate with mp3.
+    Serial.begin(9600);
+    delay(1500);
+    if (!mp3.begin(Serial,true,false)) {  //Use softwareSerial to communicate with mp3.
         Serial.println(F("Unable to begin:"));
         Serial.println(F("1.Please recheck the connection!"));
         Serial.println(F("2.Please insert the SD card!"));
@@ -72,9 +73,10 @@ void speakerInit()
     }
     Serial.println(F("DFPlayer Mini online."));
     
+    
     mp3.setTimeOut(500); //Set serial communictaion time out 500ms
 
-    mp3.volume(10);  //Set volume value (0~30).
+    mp3.volume(30);  //Set volume value (0~30).
     mp3.EQ(DFPLAYER_EQ_NORMAL);
     mp3.outputDevice(DFPLAYER_DEVICE_SD);
 }
@@ -111,7 +113,7 @@ soundID_Jokes randomJokeID()
 void playAndWait(uint8_t folderID, uint8_t state)
 {
     //function that handles the playing of the audio and waiting for it to finish before execution is continued, takes in the folder ID and state ID to determine which audio to play
-    mp3.playFolder(folderID, state);
+    mp3.play();
             
     while(true)
     {
