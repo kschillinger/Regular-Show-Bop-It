@@ -28,7 +28,7 @@ extern "C" {
 
 // Globals
 #define REQUIRED_COUNT 5
-#define GLOBAL_DEL 5000
+#define GLOBAL_DEL 3000
 //#define SHAKE_THRESH 16384
 #define SHAKE_THRESH 10000
 
@@ -57,7 +57,7 @@ volatile unsigned long lastPressTimeReset = 0;
 
 // Peripherals
 Adafruit_LIS3DH lis = Adafruit_LIS3DH();
-Adafruit_LiquidCrystal lcd(0x27);
+LiquidCrystal_I2C lcd(0x27,16,2);
 
 // ISRs - interrupts are already disabled when an ISR runs,
 // so no need for cli()/sei() inside them
@@ -113,6 +113,7 @@ void setup() {
 wdt_disable();
 
   Serial.begin(9600);
+ 
 
   gpioInit();
 
@@ -130,10 +131,11 @@ wdt_disable();
   //speakerInit();
 
   // Initialize display
-  displayInit();
+  displayInit();                                     
      srand(analogRead(A3));
      delay(2000);
      interruptInit();
+     EIFR = (1 << INTF0) | (1 << INTF1);  // clear INT0/INT1 flags
 
   sei();
 }
@@ -148,7 +150,7 @@ void loop() {
      delay(1000);
   switch (currentState) {
     case prestart:
-      displayStartingMessage();
+     displayStartingMessage();
 
 
        set_sleep_mode(SLEEP_MODE_PWR_DOWN);
@@ -157,18 +159,20 @@ void loop() {
       // Wakes here after start button ISR
      // displayScore(score);
       Serial.println("prestart");
+      lcd.clear();
+      displayScore(score);
      currentState = rand() % 4;
       
       break;  // was missing before - caused fall-through into mash
 
     case mash:
-          Serial.println("mash");
+            displayMessage("Mash", score);
       //generateSound(mash);
       delay(delayms);
 
       if (mashbuttonCount >= REQUIRED_COUNT) {
         score++;
-        //displayScore(score);
+        displayScore(score);
         if (score >= 99) {
           currentState = win;
         } else {
@@ -185,7 +189,7 @@ void loop() {
 
     case shake:
     {
-     Serial.println("SHAKE");
+       displayMessage("Shake", score);
       //generateSound(shake);
       float x=0,y=0,z=0;
 
@@ -205,7 +209,8 @@ void loop() {
       
      // lis.getEvent(&event);
 
-      if (x >= SHAKE_THRESH || y >= SHAKE_THRESH || z >= SHAKE_THRESH) {
+      if (x >= SHAKE_THRESH || y >= SHAKE_THRESH || z >= SHAKE_THRESH)
+      {
         score++;
         displayScore(score);
         if (score >= 99) {
@@ -222,7 +227,7 @@ void loop() {
     }
     case hide:
     {
-    Serial.println("hide");
+      displayMessage("Hide!", score);
       //generateSound(hide);
         digitalWrite(indicatorLEDPin, HIGH);
       
@@ -240,7 +245,7 @@ void loop() {
       {
         Serial.println("covered");
         score++;
-       // displayScore(score);
+       displayScore(score);
         if (score >= 99) {
           currentState = win;
         }
@@ -264,15 +269,16 @@ void loop() {
 
     case joke:
     {
+    
     bool action=false;
-    Serial.println("joke");
+      displayMessage("Joke", score);
       //generateSound(joke);
 
       
       
       float x=0,y=0,z=0;
    
-      
+      delay(50);
       for(int i=0;i<10;i++) //sample  10x
       {
         
@@ -283,12 +289,12 @@ void loop() {
         if(readPhotoRes())
         {
           action=true;
-          break;
+        
         }
         if (mashbuttonCount != 0) 
         {
           action=true;
-          break;
+         
         }
         delay(delayms/10);
       }
@@ -307,6 +313,7 @@ void loop() {
         if(score>0)
         {
           score--;
+          displayScore(score);
         }
         
       }
@@ -318,14 +325,16 @@ void loop() {
     Serial.println("win");
       displayMessage("You Win!", score);
       //generateSound(win);
+      currentState=prestart;
       while (1) {}  //sticking here may be a problem
       break;
 
     case lose:
     Serial.print("lose");
-      //displayMessage("You Lose!", score);
+      displayMessage("Loser Landisss", score);
       //generateSound(lose);
       Serial.print("loser landis");
+      currentState=prestart;
       while (1){};
       break;
      default:
