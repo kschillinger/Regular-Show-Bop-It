@@ -113,7 +113,7 @@ soundID_Jokes randomJokeID()
 void playAndWait(uint8_t folderID, uint8_t state)
 {
     //function that handles the playing of the audio and waiting for it to finish before execution is continued, takes in the folder ID and state ID to determine which audio to play
-    mp3.play();
+    mp3.playFolder(folderID,state);
             
     while(true)
     {
