@@ -1,14 +1,13 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <Adafruit_LiquidCrystal.h>
+#include <LiquidCrystal_I2C.h>
 
-extern Adafruit_LiquidCrystal lcd;
+extern LiquidCrystal_I2C lcd;
 
 inline void displayInit()
 {
-    Wire.begin();
-    lcd.begin(16, 2);
-    lcd.setBacklight(HIGH);
+    lcd.init();
+    lcd.backlight();
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Regular Show");

@@ -20,6 +20,7 @@ todo add loop for accelerometer polling
 #include <SoftwareSerial.h>
 #include "speakerConfig.hpp"
 #include "displayConfig.hpp"
+#include <avr/wdt.h>
 
 extern "C" {
 #include "init.h"
@@ -27,8 +28,9 @@ extern "C" {
 
 // Globals
 #define REQUIRED_COUNT 5
-#define GLOBAL_DEL 5000
-#define SHAKE_THRESH 16384
+#define GLOBAL_DEL 3000
+//#define SHAKE_THRESH 16384
+#define SHAKE_THRESH 10000
 
 // Pin definitions
 #define photoPin 8         //phys 14
@@ -42,7 +44,7 @@ extern "C" {
 //#define lpfdPin 1
 #define speakerRXPin 0  //phys2
 #define speakerTXPin 1  //phys3
-#define DEBOUNCETIME .5
+#define DEBOUNCETIME .005
 // State variables
 uint8_t currentState = prestart;
 volatile uint16_t mashbuttonCount = 0;  // volatile - modified in ISR
@@ -55,17 +57,20 @@ volatile unsigned long lastPressTimeReset = 0;
 
 // Peripherals
 Adafruit_LIS3DH lis = Adafruit_LIS3DH();
-Adafruit_LiquidCrystal lcd(0x27);
+LiquidCrystal_I2C lcd(0x27,16,2);
 
 // ISRs - interrupts are already disabled when an ISR runs,
 // so no need for cli()/sei() inside them
 void mashButtonISR() {
-     
-Serial.println("mashisr"); 
-  unsigned long now = millis();
-  if (now - lastPressTimeMash > DEBOUNCETIME) {  // 50 ms debounce window
-    mashbuttonCount++;
-    lastPressTimeMash = now;
+  if(currentState ==mash || currentState == joke) //we only want to read buttone presses in the mash and joke state
+  {
+    Serial.println("mashisr"); 
+
+    unsigned long now = millis();
+    if (now - lastPressTimeMash > DEBOUNCETIME) {  // 50 ms debounce window
+      mashbuttonCount++;
+      lastPressTimeMash = now;
+    }
   }
 
 }
@@ -76,11 +81,16 @@ void startButtonISR() {
  // detachInterrupt(digitalPinToInterrupt(3));
   if (now - lastPressTimeReset > DEBOUNCETIME) {
     lastPressTimeReset = now;
-    if (score > 0) {
-      digitalWrite(resetSignalPin, LOW);
-    } else {
+    if(currentState==prestart)
+    {
       sleep_disable();
     }
+    else
+    {
+       wdt_enable(WDTO_15MS);  // watchdog fires in 15ms
+      while(1); 
+    }
+    
   }
 }
 
@@ -99,16 +109,17 @@ void updateDelay() {
 }
 
 void setup() {
-
+   MCUSR &= ~(1 << WDRF); 
+wdt_disable();
 
   Serial.begin(9600);
+ 
 
   gpioInit();
 
   digitalWrite(8, HIGH);
 
-  interruptInit();
-
+  
   //Initialize accelerometer
   lis.begin(0x18);
 
@@ -120,32 +131,42 @@ void setup() {
   //speakerInit();
 
   // Initialize display
-  displayInit();
+  displayInit();                                     
      srand(analogRead(A3));
+     delay(2000);
+     interruptInit();
+     EIFR = (1 << INTF0) | (1 << INTF1);  // clear INT0/INT1 flags
+
   sei();
 }
 
 void loop() {
 
 
-     Serial.println("outseid");
-     delay(delayms);
+     Serial.print("Score =");
+     Serial.println(score);
+     Serial.println(currentState);
+     //Serial.println(currentState);
+     delay(1000);
   switch (currentState) {
     case prestart:
-      displayStartingMessage();
+     displayStartingMessage();
 
 
        set_sleep_mode(SLEEP_MODE_PWR_DOWN);
        sleep_enable();
        sleep_cpu();
       // Wakes here after start button ISR
-      displayScore(score);
+     // displayScore(score);
       Serial.println("prestart");
-      currentState = rand() % 4;
+      lcd.clear();
+      displayScore(score);
+     currentState = rand() % 4;
+      
       break;  // was missing before - caused fall-through into mash
 
     case mash:
-          Serial.println("mash");
+            displayMessage("Mash", score);
       //generateSound(mash);
       delay(delayms);
 
@@ -155,43 +176,40 @@ void loop() {
         if (score >= 99) {
           currentState = win;
         } else {
-          currentState = rand() % 4;
+          
+           currentState = rand() % 4;
           updateDelay();
         }
       } else {
         currentState = lose;
       }
+      Serial.print(mashbuttonCount);
       mashbuttonCount = 0;
       break;
 
     case shake:
-     Serial.println("SHAKE");
+    {
+       displayMessage("Shake", score);
       //generateSound(shake);
-      delay(delayms);
-      lis.read();
-      lis.getEvent(&event);
+      float x=0,y=0,z=0;
 
-      if (abs(lis.z) >= SHAKE_THRESH || abs(lis.y) >= SHAKE_THRESH || abs(lis.x) >= SHAKE_THRESH) {
-        score++;
-        displayScore(score);
-        if (score >= 99) {
-          currentState = win;
-        } else {
-          currentState = rand() % 4;
-          updateDelay();
-        }
-      } else {
-        currentState = lose;
+      for(int i=0;i<10;i++) //sample accelerometer 10x
+      {
+        
+        lis.read();
+        x+= abs(lis.x);
+        y+= abs(lis.y);
+        z+= abs(lis.z);
+        delay(delayms/10);
       }
-      break;
+      //average reading
+      x=x/10;
+      y=y/10;
+      z=z/10;
+      
+     // lis.getEvent(&event);
 
-    case hide:
-    Serial.println("hide");
-      //generateSound(hide);
-      delay(delayms);
-      digitalWrite(indicatorLEDPin, HIGH);
-
-      if (readPhotoRes()) 
+      if (x >= SHAKE_THRESH || y >= SHAKE_THRESH || z >= SHAKE_THRESH)
       {
         score++;
         displayScore(score);
@@ -204,40 +222,122 @@ void loop() {
       } else {
         currentState = lose;
       }
+      mashbuttonCount=0;
+      break;
+    }
+    case hide:
+    {
+      displayMessage("Hide!", score);
+      //generateSound(hide);
+        digitalWrite(indicatorLEDPin, HIGH);
+      
+
+  
+      //Serial.print("hide");
+      bool covered=false;
+      for(int i=0;i<10;i++)
+      {
+        if(readPhotoRes())
+          covered=true;
+        delay(delayms/10);
+      }
+      if (covered) 
+      {
+        Serial.println("covered");
+        score++;
+       displayScore(score);
+        if (score >= 99) {
+          currentState = win;
+        }
+         else
+         {
+          currentState = rand() % 4;
+          Serial.println("succ");
+       
+          updateDelay();
+        }
+      } 
+      else 
+      {
+        Serial.println("lost");
+        currentState = lose;
+        Serial.println("exe");
+      }
       digitalWrite(indicatorLEDPin, LOW);
       break;
+  }
 
     case joke:
-    Serial.println("joke");
+    {
+    
+    bool action=false;
+      displayMessage("Joke", score);
       //generateSound(joke);
-      delay(delayms);
 
-      if (mashbuttonCount != 0) {
-        currentState = lose;
-        break;
+      
+      
+      float x=0,y=0,z=0;
+   
+      delay(50);
+      for(int i=0;i<10;i++) //sample  10x
+      {
+        
+        lis.read();
+        x+= abs(lis.x);
+        y+= abs(lis.y);
+        z+= abs(lis.z);
+        if(readPhotoRes())
+        {
+          action=true;
+        
+        }
+        if (mashbuttonCount != 0) 
+        {
+          action=true;
+         
+        }
+        delay(delayms/10);
       }
-      lis.read();
-      if (abs(lis.z) >= SHAKE_THRESH || abs(lis.y) >= SHAKE_THRESH || abs(lis.x) >= SHAKE_THRESH) {
-        currentState = lose;
-        break;
+      //average reading
+      x=x/10;
+      y=y/10;
+      z=z/10;
+      if(x >= SHAKE_THRESH || y >= SHAKE_THRESH || z >= SHAKE_THRESH) 
+      {
+        action=true;
       }
 
+     
+      if(action)
+      {
+        if(score>0)
+        {
+          score--;
+          displayScore(score);
+        }
+        
+      }
+      
       currentState = rand() % 4;
       break;
-
+    }
     case win:
     Serial.println("win");
       displayMessage("You Win!", score);
       //generateSound(win);
+      currentState=prestart;
       while (1) {}  //sticking here may be a problem
       break;
 
     case lose:
     Serial.print("lose");
-      displayMessage("You Lose!", score);
+      displayMessage("Loser Landisss", score);
       //generateSound(lose);
       Serial.print("loser landis");
-      while (1) {}
+      currentState=prestart;
+      while (1){};
       break;
+     default:
+      Serial.println("not a state");
   }
 }
