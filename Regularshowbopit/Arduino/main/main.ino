@@ -107,6 +107,28 @@ void updateDelay() {
     delayms -= increment;
   }
 }
+void displayCredits()
+{
+    
+    mp3.playFolder(2,1); //unsure of this, need confirm from sd card
+            
+    for(int i=0;i<3;i++) //delay should be 1/3 of audio length
+    {
+      switch(i)
+
+      case 0:
+          displayName("Kebin");
+          break;
+      case 1: 
+            displayName("Harry");
+            break;
+      case 2:
+          displayName("LLandis");
+            break;
+      delay(1000);
+    }
+}
+
 
 void setup() {
    MCUSR &= ~(1 << WDRF); 
@@ -146,7 +168,7 @@ void loop() {
 
    
      //Serial.println(currentState);
-     delay(1000);
+     displayCredits();
     
 
   switch (currentState) {
