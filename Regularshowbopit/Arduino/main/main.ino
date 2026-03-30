@@ -48,7 +48,7 @@ extern "C" {
 // State variables
 uint8_t currentState = prestart;
 volatile uint16_t mashbuttonCount = 0;  // volatile - modified in ISR
-uint8_t score = 0x00;
+uint8_t score = 0;
 uint16_t delayms = GLOBAL_DEL;
 uint8_t increment = GLOBAL_DEL / 100;
 sensors_event_t event;
@@ -67,7 +67,7 @@ void mashButtonISR() {
     Serial.println("mashisr"); 
 
     unsigned long now = millis();
-    if (now - lastPressTimeMash > DEBOUNCETIME) {  // 50 ms debounce window
+    if (now - lastPressTimeMash > DEBOUNCETIME) {  
       mashbuttonCount++;
       lastPressTimeMash = now;
     }
@@ -78,7 +78,7 @@ void mashButtonISR() {
 void startButtonISR() {
      Serial.println("startisr");
   unsigned long now = millis();
- // detachInterrupt(digitalPinToInterrupt(3));
+
   if (now - lastPressTimeReset > DEBOUNCETIME) {
     lastPressTimeReset = now;
     if(currentState==prestart)
@@ -147,7 +147,7 @@ void loop() {
    
      //Serial.println(currentState);
      delay(1000);
-    playAndWait(1,1);
+    
 
   switch (currentState) {
     case prestart:
@@ -168,7 +168,7 @@ void loop() {
 
     case mash:
             displayMessage("Mash", score);
-      //generateSound(mash);
+      generateSound(mash);
       delay(delayms);
 
       if (mashbuttonCount >= REQUIRED_COUNT) {
@@ -191,7 +191,7 @@ void loop() {
     case shake:
     {
        displayMessage("Shake", score);
-      //generateSound(shake);
+      generateSound(shake);
       float x=0,y=0,z=0;
 
       for(int i=0;i<10;i++) //sample accelerometer 10x
@@ -229,7 +229,7 @@ void loop() {
     case hide:
     {
       displayMessage("Hide!", score);
-      //generateSound(hide);
+      generateSound(hide);
         digitalWrite(indicatorLEDPin, HIGH);
       
 
@@ -273,7 +273,7 @@ void loop() {
     
     bool action=false;
       displayMessage("Joke", score);
-      //generateSound(joke);
+      generateSound(joke);
 
       
       
@@ -325,15 +325,15 @@ void loop() {
     case win:
     
       displayMessage("You Win!", score);
-      //generateSound(win);
+      generateSound(win);
       currentState=prestart;
       while (1) {}  //sticking here may be a problem
       break;
 
     case lose:
     
-      displayMessage("Loser Landisss", score);
-      //generateSound(lose);
+      displayMessage("You lose!", score);
+      generateSound(lose);
     
       currentState=prestart;
       while (1){};
