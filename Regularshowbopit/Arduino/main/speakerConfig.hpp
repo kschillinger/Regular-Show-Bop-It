@@ -114,15 +114,17 @@ void playAndWait(uint8_t folderID, uint8_t state)
 {
     //function that handles the playing of the audio and waiting for it to finish before execution is continued, takes in the folder ID and state ID to determine which audio to play
     mp3.playFolder(folderID,state);
-            
+     unsigned start = millis();         
     while(true)
     {
-            unsigned start = millis();
+           
             if(mp3.available() && mp3.readType() == DFPlayerPlayFinished)
             {
-                unsigned long now = millis();
-                if (start -now > 5000) break;
+                break;
             }
+            unsigned long now = millis();
+            if (now - start > 6000) 
+                break;
     }
 }
 

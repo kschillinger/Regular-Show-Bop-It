@@ -110,7 +110,7 @@ void updateDelay() {
 void displayCredits()
 {
     
-    mp3.playFolder(1,7); //unsure of this, need confirm from sd card
+  mp3.playFolder(1,7); //unsure of this, need confirm from sd card
             
     for(int i=0;i<3;i++) //delay should be 1/3 of audio length
     {
@@ -125,7 +125,7 @@ void displayCredits()
       case (2):
           displayName("LLandis");
             break;}
-      delay(1666.67);
+      delay(1667);
     }
 }
 
@@ -173,7 +173,7 @@ void loop() {
 
   switch (currentState) {
     case prestart:
-     displayCredits();
+    displayCredits();
      displayStartingMessage();
 
 
