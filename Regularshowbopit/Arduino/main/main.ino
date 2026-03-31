@@ -110,22 +110,22 @@ void updateDelay() {
 void displayCredits()
 {
     
-    mp3.playFolder(2,1); //unsure of this, need confirm from sd card
+    mp3.playFolder(1,7); //unsure of this, need confirm from sd card
             
     for(int i=0;i<3;i++) //delay should be 1/3 of audio length
     {
       switch(i)
 
-      case 0:
+      {case 0:
           displayName("Kebin");
           break;
       case 1: 
             displayName("Harry");
             break;
-      case 2:
+      case (2):
           displayName("LLandis");
-            break;
-      delay(1000);
+            break;}
+      delay(1666.67);
     }
 }
 
@@ -168,11 +168,12 @@ void loop() {
 
    
      //Serial.println(currentState);
-     displayCredits();
+    
     
 
   switch (currentState) {
     case prestart:
+     displayCredits();
      displayStartingMessage();
 
 
