@@ -64,14 +64,12 @@ enum soundID_Jokes : uint8_t
 void speakerInit()
 {
     Serial.begin(9600);
-    delay(1500);
-    if (!mp3.begin(Serial,true,false)) {  //Use softwareSerial to communicate with mp3.
-        Serial.println(F("Unable to begin:"));
-        Serial.println(F("1.Please recheck the connection!"));
-        Serial.println(F("2.Please insert the SD card!"));
+    delay(2000);
+    if (!mp3.begin(Serial,false,true)) {  //Use softwareSerial to communicate with mp3.
+        
         while(true);
     }
-    Serial.println(F("DFPlayer Mini online."));
+    //Serial.println(F("DFPlayer Mini online."));
     
     
     mp3.setTimeOut(500); //Set serial communictaion time out 500ms
@@ -114,7 +112,7 @@ void playAndWait(uint8_t folderID, uint8_t state)
 {
     //function that handles the playing of the audio and waiting for it to finish before execution is continued, takes in the folder ID and state ID to determine which audio to play
     mp3.playFolder(folderID,state);
-     unsigned start = millis();         
+     unsigned long start = millis();         
     while(true)
     {
            

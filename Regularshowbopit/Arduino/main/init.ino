@@ -34,8 +34,6 @@ void gpioInit()
   pinMode(startButtonPin, INPUT);
   pinMode(acclerometerPin, INPUT);
   //pinMode(lpfdPin, INPUT);
-  pinMode(speakerRXPin, OUTPUT);
-  pinMode(speakerTXPin, INPUT);
   
 }
 
