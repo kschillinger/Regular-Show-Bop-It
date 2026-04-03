@@ -24,7 +24,8 @@
 #define speakerTXPin 1  //phys3
 
 
-void gpioInit() {
+void gpioInit() 
+{
 
   pinMode(photoPin, INPUT);
   pinMode(mashButtonPin, INPUT);
@@ -33,8 +34,6 @@ void gpioInit() {
   pinMode(startButtonPin, INPUT);
   pinMode(acclerometerPin, INPUT);
   //pinMode(lpfdPin, INPUT);
-  pinMode(speakerRXPin, OUTPUT);
-  pinMode(speakerTXPin, INPUT);
   
 }
 

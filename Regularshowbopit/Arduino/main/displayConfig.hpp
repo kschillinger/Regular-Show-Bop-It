@@ -32,6 +32,13 @@ inline void displayMessage(const char *topLine, uint8_t score)
     lcd.print("Score: ");
     lcd.print(score);
 }
+inline void displayName(const char *line)
+{
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print(line);
+   
+}
 
 inline void displayStartingMessage()
 {
