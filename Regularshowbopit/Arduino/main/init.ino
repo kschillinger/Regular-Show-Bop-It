@@ -36,6 +36,19 @@ void gpioInit()
   //pinMode(lpfdPin, INPUT);
   
 }
+void gpioShutoff()
+{
+  pinMode(4, OUTPUT);  digitalWrite(4, LOW);
+pinMode(9, OUTPUT);  digitalWrite(9, LOW);
+pinMode(10, OUTPUT); digitalWrite(10, LOW);
+pinMode(11, OUTPUT); digitalWrite(11, LOW);
+pinMode(12, OUTPUT); digitalWrite(12, LOW);
+pinMode(13, OUTPUT); digitalWrite(13, LOW);
+pinMode(A0, OUTPUT); digitalWrite(A0, LOW);
+pinMode(A1, OUTPUT); digitalWrite(A1, LOW);
+pinMode(A2, OUTPUT); digitalWrite(A2, LOW);
+pinMode(A3, OUTPUT); digitalWrite(A3, LOW);
+}
 
 void interruptInit() 
 {
