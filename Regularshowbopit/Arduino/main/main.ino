@@ -54,7 +54,7 @@ uint8_t increment = GLOBAL_DEL / 100;
 sensors_event_t event;
 volatile unsigned long lastPressTimeMash = 0;
 volatile unsigned long lastPressTimeReset = 0;
-
+uint8_t lastState;
 // Peripherals
 Adafruit_LIS3DH lis = Adafruit_LIS3DH();
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -184,8 +184,8 @@ void loop() {
       lcd.clear();
       displayScore(score);
       currentState = rand() % 4;
-
-      break;  // was missing before - caused fall-through into mash
+      lastState=preStart;
+      break;  
 
     case mash:
       displayMessage("Mash", score);
@@ -248,9 +248,15 @@ void loop() {
       }
     case hide:
       {
+        if(lastState == preStart) 
+        {
+          delay(50);
+        }
+        
         displayMessage("Hide!", score);
-        generateSound(hide);
         digitalWrite(indicatorLEDPin, HIGH);
+        generateSound(hide);
+        
 
 
 
@@ -292,7 +298,7 @@ void loop() {
 
         float x = 0, y = 0, z = 0;
 
-        delay(50);
+        //delay(50);
         for (int i = 0; i < 10; i++)  //sample  10x
         {
 
