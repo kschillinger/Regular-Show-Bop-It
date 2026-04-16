@@ -29,8 +29,8 @@ extern "C" {
 // Globals
 #define REQUIRED_COUNT 5
 #define GLOBAL_DEL 3000
-//#define SHAKE_THRESH 16384
-#define SHAKE_THRESH 10000
+#define SHAKE_THRESH 16384
+//#define SHAKE_THRESH 10000
 
 // Pin definitions
 #define photoPin 8         //phys 14
