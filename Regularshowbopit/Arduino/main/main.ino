@@ -29,7 +29,7 @@ extern "C" {
 // Globals
 #define REQUIRED_COUNT 5
 #define GLOBAL_DEL 3000
-#define SHAKE_THRESH 16384
+#define SHAKE_THRESH 12288
 //#define SHAKE_THRESH 10000
 
 // Pin definitions
@@ -184,7 +184,7 @@ void loop() {
       lcd.clear();
       displayScore(score);
       currentState = rand() % 4;
-      lastState=preStart;
+      lastState=prestart;
       break;  
 
     case mash:
@@ -193,7 +193,7 @@ void loop() {
       delay(delayms);
 
       if (mashbuttonCount >= REQUIRED_COUNT) {
-        score++;
+        score+=5;
         displayScore(score);
         if (score >= 99) {
           currentState = win;
@@ -232,7 +232,7 @@ void loop() {
         // lis.getEvent(&event);
 
         if (x >= SHAKE_THRESH || y >= SHAKE_THRESH || z >= SHAKE_THRESH) {
-          score++;
+          score+=5;
           displayScore(score);
           if (score >= 99) {
             currentState = win;
@@ -248,7 +248,7 @@ void loop() {
       }
     case hide:
       {
-        if(lastState == preStart) 
+        if(lastState == prestart) 
         {
           delay(50);
         }
@@ -269,7 +269,7 @@ void loop() {
         }
         if (covered) {
 
-          score++;
+          score+=5;
           displayScore(score);
           if (score >= 99) {
             currentState = win;
@@ -325,7 +325,7 @@ void loop() {
 
         if (action) {
           if (score > 0) {
-            score--;
+            score-=5;
             displayScore(score);
           }
         }
