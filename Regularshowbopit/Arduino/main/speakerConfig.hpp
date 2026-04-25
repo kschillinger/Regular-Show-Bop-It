@@ -74,7 +74,7 @@ void speakerInit()
     
     mp3.setTimeOut(500); //Set serial communictaion time out 500ms
 
-    mp3.volume(20);  //Set volume value (0~30).
+    mp3.volume(30);  //Set volume value (0~30).
     mp3.EQ(DFPLAYER_EQ_NORMAL);
     mp3.outputDevice(DFPLAYER_DEVICE_SD);
 }

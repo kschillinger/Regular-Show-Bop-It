@@ -29,7 +29,7 @@ extern "C" {
 // Globals
 #define REQUIRED_COUNT 5
 #define GLOBAL_DEL 3000
-#define SHAKE_THRESH 16384
+#define SHAKE_THRESH 12288
 //#define SHAKE_THRESH 10000
 
 // Pin definitions
@@ -54,7 +54,7 @@ uint8_t increment = GLOBAL_DEL / 100;
 sensors_event_t event;
 volatile unsigned long lastPressTimeMash = 0;
 volatile unsigned long lastPressTimeReset = 0;
-
+uint8_t lastState;
 // Peripherals
 Adafruit_LIS3DH lis = Adafruit_LIS3DH();
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -104,7 +104,7 @@ void updateDelay() {
 }
 void displayCredits() {
 
-  mp3.playFolder(1, 7);  //unsure of this, need confirm from sd card
+  mp3.playFolder(1, 7);  
 
   for (int i = 0; i < 3; i++)  //delay should be 1/3 of audio length
   {
@@ -184,8 +184,8 @@ void loop() {
       lcd.clear();
       displayScore(score);
       currentState = rand() % 4;
-
-      break;  // was missing before - caused fall-through into mash
+      lastState=prestart;
+      break;  
 
     case mash:
       displayMessage("Mash", score);
@@ -193,7 +193,7 @@ void loop() {
       delay(delayms);
 
       if (mashbuttonCount >= REQUIRED_COUNT) {
-        score++;
+        score+=5;
         displayScore(score);
         if (score >= 99) {
           currentState = win;
@@ -232,7 +232,7 @@ void loop() {
         // lis.getEvent(&event);
 
         if (x >= SHAKE_THRESH || y >= SHAKE_THRESH || z >= SHAKE_THRESH) {
-          score++;
+          score+=5;
           displayScore(score);
           if (score >= 99) {
             currentState = win;
@@ -248,9 +248,15 @@ void loop() {
       }
     case hide:
       {
+        if(lastState == prestart) 
+        {
+          delay(50);
+        }
+        
         displayMessage("Hide!", score);
-        generateSound(hide);
         digitalWrite(indicatorLEDPin, HIGH);
+        generateSound(hide);
+        
 
 
 
@@ -263,7 +269,7 @@ void loop() {
         }
         if (covered) {
 
-          score++;
+          score+=5;
           displayScore(score);
           if (score >= 99) {
             currentState = win;
@@ -292,7 +298,7 @@ void loop() {
 
         float x = 0, y = 0, z = 0;
 
-        delay(50);
+        //delay(50);
         for (int i = 0; i < 10; i++)  //sample  10x
         {
 
@@ -319,7 +325,7 @@ void loop() {
 
         if (action) {
           if (score > 0) {
-            score--;
+            score-=5;
             displayScore(score);
           }
         }
@@ -332,7 +338,7 @@ void loop() {
       displayMessage("You Win!", score);
       generateSound(win);
       currentState = prestart;
-      while (1) {}  //sticking here may be a problem
+      while (1) {}  
       break;
 
     case lose:

@@ -3,7 +3,7 @@
 
 void gpioInit();
 void interruptInit();
-void timerInit(); // i cant remember why i included --> nice
+
 
 void mashButtonISR(void);
 void startButtonISR(void);
