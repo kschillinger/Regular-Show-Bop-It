@@ -90,6 +90,9 @@ void startButtonISR() {
 }
 
 // Hardware reads
+bool readPhotoRes(void) {
+  return (digitalRead(photoPin) == HIGH);
+}
 
 // Helpers
 void updateDelay() {
@@ -260,7 +263,7 @@ void loop() {
         //Serial.print("hide");
         bool covered = false;
         for (int i = 0; i < 10; i++) {
-          if ((digitalRead(photoPin) == HIGH))
+          if (readPhotoRes())
             covered = true;
           delay(delayms / 10);
         }
@@ -303,7 +306,7 @@ void loop() {
           x += abs(lis.x);
           y += abs(lis.y);
           z += abs(lis.z);
-          if ((digitalRead(photoPin) == HIGH)) {
+          if (readPhotoRes()) {
             action = true;
           }
           if (mashbuttonCount != 0) {
