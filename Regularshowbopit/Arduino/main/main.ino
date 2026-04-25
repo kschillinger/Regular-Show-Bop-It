@@ -90,9 +90,6 @@ void startButtonISR() {
 }
 
 // Hardware reads
-bool readPhotoRes(void) {
-  return (digitalRead(photoPin) == HIGH);
-}
 
 // Helpers
 void updateDelay() {
@@ -104,7 +101,7 @@ void updateDelay() {
 }
 void displayCredits() {
 
-  mp3.playFolder(1, 7);  //unsure of this, need confirm from sd card
+  mp3.playFolder(1, 7);  
 
   for (int i = 0; i < 3; i++)  //delay should be 1/3 of audio length
   {
@@ -263,7 +260,7 @@ void loop() {
         //Serial.print("hide");
         bool covered = false;
         for (int i = 0; i < 10; i++) {
-          if (readPhotoRes())
+          if ((digitalRead(photoPin) == HIGH))
             covered = true;
           delay(delayms / 10);
         }
@@ -306,7 +303,7 @@ void loop() {
           x += abs(lis.x);
           y += abs(lis.y);
           z += abs(lis.z);
-          if (readPhotoRes()) {
+          if ((digitalRead(photoPin) == HIGH)) {
             action = true;
           }
           if (mashbuttonCount != 0) {
@@ -338,7 +335,7 @@ void loop() {
       displayMessage("You Win!", score);
       generateSound(win);
       currentState = prestart;
-      while (1) {}  //sticking here may be a problem
+      while (1) {}  
       break;
 
     case lose:
