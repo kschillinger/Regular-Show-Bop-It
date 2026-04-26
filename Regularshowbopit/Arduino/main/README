@@ -1,0 +1,7 @@
+├── main.ino            # Core game logic and FSM
+├── init.h              # Hardware initialization declarations
+├── init.ino            # Hardware initialization definitions
+├── displayConfig.hpp   # LCD screen driver 
+├── speakerConfig.hpp   # DFPlayer Mini audio driver
+└── build/
+    └── arduino.avr.uno/ # Compiled build artifacts (Arduino IDE output)
